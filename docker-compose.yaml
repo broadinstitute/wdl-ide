@@ -17,7 +17,7 @@ services:
     - ./cromwell/cromwell.conf:/etc/cromwell/cromwell.conf:ro
     - ${GOOGLE_APPLICATION_CREDENTIALS:-nokey}:/root/key.json:ro
     - executions:/executions
-    - docker:/usr/local/bin:ro
+    - docker-bin:/usr/local/bin:ro
     depends_on:
     - db
     - docker
@@ -30,7 +30,8 @@ services:
     image: docker:dind
     privileged: true
     volumes:
-    - docker:/usr/local/bin
+    - docker-bin:/usr/local/bin
+    - docker-run:/var/lib/docker
     - executions:/executions
   theia:
     build: ./theia
@@ -47,7 +48,8 @@ services:
     - docker
 volumes:
   db:
-  docker:
+  docker-bin:
+  docker-run:
   executions:
   workspace:
   nokey:
