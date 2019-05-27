@@ -25,19 +25,25 @@
 				"title": "Run WDL"
 			}
 		],
-		"configuration": [
-			{
-				"title": "WDL Debugger Configuration",
-				"properties": {
-					"wdl-debugger.cromwell.baseUri": {
-						"type": "string",
-						"description": "Base URI of the Cromwell API",
-						"default": "http://localhost:8000/api/workflows/v1",
-						"scope": "application"
-					}
+		"configuration": {
+			"title": "WDL Debugger Configuration",
+			"properties": {
+				"wdl-debugger.cromwell.baseUri": {
+					"type": "string",
+					"description": "Base URI of the Cromwell API",
+					"pattern": "^https?://[\\w.-]+(:\\d+)[/\\w.-]*$",
+					"default": "http://localhost:8000/api/workflows/v1",
+					"scope": "application"
+				},
+				"wdl-debugger.cromwell.pollMsec": {
+					"type": "number",
+					"description": "Polling interval of Cromwell API, in msec",
+					"minimum": 5000,
+					"default": 5000,
+					"scope": "application"
 				}
 			}
-		]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "yarn run compile",

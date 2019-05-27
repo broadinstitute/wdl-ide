@@ -1,13 +1,13 @@
 {
   "files.exclude": {
-     "**/.*_history": true,
-     "**/.git": true,
-     "**/.cache": true,
-     "**/.config": true,
-     "**/.local": true,
-     "**/.npm": true,
-     "**/.theia": true,
-     "**/.yarn": true
+    "**/.*_history": true,
+    "**/.git": true,
+    "**/.cache": true,
+    "**/.config": true,
+    "**/.local": true,
+    "**/.npm": true,
+    "**/.theia": true,
+    "**/.yarn": true
   },
   "wdl-debugger.cromwell.baseUri": "http://cromwell:8000/api/workflows/v1"
 }
