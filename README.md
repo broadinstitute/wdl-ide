@@ -56,7 +56,7 @@ To deploy the IDE:
     GOOGLE_APPLICATION_CREDENTIALS=./<your-service-account-key>.json \
     GOOGLE_AUTH_MODE=service-account \
     GOOGLE_CLOUD_PROJECT=<your-project-name> \
-    CROMWELL_EXECUTIONS_BUCKET=<executions-bucket-name> \
+    GOOGLE_EXECUTIONS_BUCKET=<executions-bucket-name> \
     docker-compose up
     ```
   [*] In the future, we may provide a simplified script to do most of the above.

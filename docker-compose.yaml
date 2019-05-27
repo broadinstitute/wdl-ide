@@ -11,11 +11,11 @@ services:
     - GOOGLE_APPLICATION_CREDENTIALS=/root/key.json
     - GOOGLE_AUTH_MODE=${GOOGLE_AUTH_MODE:-application-default}
     - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-default-project}
-    - CROMWELL_EXECUTIONS_BUCKET=${CROMWELL_EXECUTIONS_BUCKET:-default-bucket}
+    - GOOGLE_EXECUTIONS_BUCKET
     - DOCKER_HOST=tcp://docker:2375
     volumes:
     - ./cromwell/cromwell.conf:/etc/cromwell/cromwell.conf:ro
-    - ${GOOGLE_APPLICATION_CREDENTIALS:-nokey}:/root/key.json:ro
+    - ${GOOGLE_APPLICATION_CREDENTIALS:-google-nocred}:/root/key.json:ro
     - executions:/executions
     - docker-bin:/usr/local/bin:ro
     depends_on:
@@ -51,5 +51,5 @@ volumes:
   docker-bin:
   docker-run:
   executions:
+  google-nocred:
   workspace:
-  nokey:
