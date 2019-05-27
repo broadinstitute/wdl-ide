@@ -1,0 +1,39 @@
+version: '3'
+services:
+  cromwell:
+    image: broadinstitute/cromwell:${CROMWELL_VERSION:-41}
+    command: server
+    ports:
+    - 8000:8000
+    env_file: ./cromwell/mysql.env
+    environment:
+    - JAVA_OPTS=-Dconfig.file=/etc/cromwell/cromwell.conf
+    - GOOGLE_APPLICATION_CREDENTIALS=/root/key.json
+    - GOOGLE_AUTH_MODE=${GOOGLE_AUTH_MODE:-application-default}
+    - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-default-project}
+    - CROMWELL_EXECUTIONS_BUCKET=${CROMWELL_EXECUTIONS_BUCKET:-default-bucket}
+    - DOCKER_HOST=tcp://docker:2375
+    volumes:
+    - ./cromwell/cromwell.conf:/etc/cromwell/cromwell.conf:ro
+    - ${GOOGLE_APPLICATION_CREDENTIALS:-nokey}:/root/key.json:ro
+    - executions:/executions
+    - docker:/usr/local/bin:ro
+    depends_on:
+    - db
+    - docker
+  db:
+    image: mysql
+    env_file: ./cromwell/mysql.env
+    volumes:
+    - db:/var/lib/mysql
+  docker:
+    image: docker:dind
+    privileged: true
+    volumes:
+    - docker:/usr/local/bin
+    - executions:/executions
+volumes:
+  db:
+  docker:
+  executions:
+  nokey:
