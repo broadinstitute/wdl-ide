@@ -10,7 +10,7 @@ and is not yet feature-complete.
 
 We will create an extension for [Visual Studio Code](https://code.visualstudio.com/) to
 - [x] submit workflows for execution to a [Cromwell](https://cromwell.readthedocs.io) API
-- [x] watch for completion/failure of each workflow
+- [x] watch for completion/failure of each workflow (or cancel it)
 - [ ] highlight task-specific failures
 - [ ] provide feedback on runtime resource management
 
