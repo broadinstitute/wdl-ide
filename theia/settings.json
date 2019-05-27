@@ -8,5 +8,6 @@
      "**/.npm": true,
      "**/.theia": true,
      "**/.yarn": true
-  }
+  },
+  "wdl-debugger.cromwell.baseUri": "http://cromwell:8000/api/workflows/v1"
 }

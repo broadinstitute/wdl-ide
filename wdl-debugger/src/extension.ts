@@ -1,27 +1,76 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import { promises as fs } from 'fs';
+import * as path from 'path';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+import {
+	ExtensionContext,
+	commands,
+	window,
+	workspace,
+} from 'vscode';
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-		console.log('Congratulations, your extension "wdl-debugger" is now active!');
+import { submitWorkflow } from './cromwell';
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
+const cmdRunWDL = 'extension.runWDL';
+const cromwellBaseUriConfig = 'wdl-debugger.cromwell.baseUri';
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World!');
+export const activate = async (context: ExtensionContext) => {
+	const storagePath = context.storagePath!;
+
+	try {
+		await fs.mkdir(storagePath!);
+	} catch (err) {
+		if (err.code !== 'EEXIST') {
+			throw err;
+		}
+	}
+
+	const disposable = commands.registerTextEditorCommand(cmdRunWDL, async (
+		{ document: { uri, languageId } },
+	) => {
+		try {
+			if (languageId !== 'wdl') {
+				throw Error('This command is only valid for WDL files!');
+			}
+
+			const resourceConfig = workspace.getConfiguration('', uri);
+			let cromwellBaseUri = resourceConfig.get<string>(cromwellBaseUriConfig)!;
+
+			const wdlPath = uri.fsPath;
+			const { id, status } = await submitWorkflow(
+				cromwellBaseUri,
+				wdlPath,
+				await getInputsPath(storagePath, wdlPath),
+				await getOptionsPath(storagePath),
+			);
+
+			window.showInformationMessage(`${status} ${id}`);
+		} catch (err) {
+			window.showErrorMessage(err.message);
+		}
 	});
 
 	context.subscriptions.push(disposable);
-}
+};
 
-// this method is called when your extension is deactivated
+const getInputsPath = (storagePath: string, wdlPath: string) => {
+	const fileName = path.basename(wdlPath, '.wdl') + `.inputs.json`;
+	return getFilePath(storagePath, fileName);
+};
+
+const getOptionsPath = (storagePath: string) => {
+	return getFilePath(storagePath, 'options.json');
+};
+
+const getFilePath = async (storagePath: string, fileName: string) => {
+	const filePath = path.join(storagePath, fileName);
+	try {
+		await fs.writeFile(filePath, '{\n\n}', { flag: 'wx' });
+	} catch (err) {
+		if (err.code !== 'EEXIST') {
+			throw err;
+		}
+	}
+	return filePath;
+};
+
 export function deactivate() {}
