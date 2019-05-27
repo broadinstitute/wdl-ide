@@ -1,0 +1,11 @@
+!package.json
+!ts*.json
+!.vscode/*.json
+
+*.vsix
+*.wdl
+
+.vscode-test/
+
+out
+node_modules
