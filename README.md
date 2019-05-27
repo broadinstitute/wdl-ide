@@ -9,14 +9,14 @@ and is not yet feature-complete.
 ## Debugger Extension
 
 We will create an extension for [Visual Studio Code](https://code.visualstudio.com/) to
-- submit workflows for execution to a [Cromwell](https://cromwell.readthedocs.io) API
-- watch for completion/failure of each workflow
-- highlight task-specific failures
-- provide feedback on runtime resource management
+- [x] submit workflows for execution to a [Cromwell](https://cromwell.readthedocs.io) API
+- [x] watch for completion/failure of each workflow
+- [ ] highlight task-specific failures
+- [ ] provide feedback on runtime resource management
 
 ## Browser IDE
 
-Additionally, we will provide an Integrated Development Environment (IDE),
+Additionally, we provide an Integrated Development Environment (IDE),
 which runs in a web browser and is based on [Theia](https://www.theia-ide.org/).
 
 It bundles WDL extensions for VS Code -
