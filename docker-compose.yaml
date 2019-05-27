@@ -37,11 +37,14 @@ services:
     image: theia
     ports:
     - 3000:3000
+    environment:
+     - DOCKER_HOST=tcp://docker:2375
     volumes:
     - executions:/executions
     - workspace:/home/workspace
     depends_on:
     - cromwell
+    - docker
 volumes:
   db:
   docker:

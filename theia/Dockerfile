@@ -5,6 +5,7 @@ ENV THEIA_DIR=/opt/theia
 WORKDIR ${THEIA_DIR}
 
 
+
 FROM base AS build
 
 RUN apk add build-base python
@@ -33,7 +34,7 @@ ENV USER=theia \
 
 ADD settings.json ${WORKSPACE}/.theia/
 
-RUN apk add --no-cache curl git && \
+RUN apk add --no-cache curl docker git && \
     adduser -Sh ${WORKSPACE} ${USER} && \
     chown -R ${USER} ${WORKSPACE} && \
     chmod +w .
