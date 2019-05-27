@@ -44,7 +44,7 @@ To deploy the IDE:
   ```
   docker compose up
   ```
-- for local *and* Google cloud development, do the following instead [*]:
+- for local *and* Google Cloud development, do the following instead [*]:
   - [create a project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project) on [Google Cloud Platform](https://cloud.google.com/)
   - [create a service account](https://cloud.google.com/iam/docs/creating-managing-service-accounts#creating_a_service_account) with project-wide `Genomics Pipelines Runner` _role_, and **download** its key in JSON format
   - [grant](https://cloud.google.com/iam/docs/granting-roles-to-service-accounts#granting_access_to_a_user_for_a_service_account) it `Service Account User` _permission_ **on**
@@ -60,6 +60,7 @@ To deploy the IDE:
     docker-compose up
     ```
   [*] In the future, we may provide a simplified script to do most of the above.
+      Additionally, we may add settings for other cloud providers (PRs are welcome!).
 
 The first time you run the Docker compose command, it will take ~5 minutes to compile the IDE from sources and bring up the environment. Later on, we will provide a Docker image to speed that up.
 
