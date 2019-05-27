@@ -1,0 +1,12 @@
+{
+  "files.exclude": {
+     "**/.*_history": true,
+     "**/.git": true,
+     "**/.cache": true,
+     "**/.config": true,
+     "**/.local": true,
+     "**/.npm": true,
+     "**/.theia": true,
+     "**/.yarn": true
+  }
+}

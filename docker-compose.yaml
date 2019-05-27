@@ -32,8 +32,19 @@ services:
     volumes:
     - docker:/usr/local/bin
     - executions:/executions
+  theia:
+    build: ./theia
+    image: theia
+    ports:
+    - 3000:3000
+    volumes:
+    - executions:/executions
+    - workspace:/home/workspace
+    depends_on:
+    - cromwell
 volumes:
   db:
   docker:
   executions:
+  workspace:
   nokey:
