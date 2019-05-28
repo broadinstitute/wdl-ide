@@ -42,7 +42,7 @@ services:
     - DOCKER_HOST=tcp://docker:2375
     volumes:
     - executions:/executions
-    - workspace:/home/workspace
+    - home:/home/theia
     depends_on:
     - cromwell
     - docker
@@ -52,4 +52,4 @@ volumes:
   docker-run:
   executions:
   google-nocred:
-  workspace:
+  home:
