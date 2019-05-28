@@ -15,14 +15,6 @@ ADD package.json ./
 RUN yarn
 RUN yarn theia build
 
-WORKDIR ${THEIA_DIR}/plugins
-
-RUN download() { \
-      wget -O $1.$2-$3.vsix \
-        https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/$1/extension/$2/$3/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage ; \
-    } && \
-    download broadinstitute wdl 1.0.0
-
 
 
 FROM base
@@ -30,7 +22,8 @@ FROM base
 COPY --from=build ${THEIA_DIR} .
 
 ENV USER=theia \
-    WORKSPACE=/home/workspace
+    WORKSPACE=/home/workspace \
+    THEIA_PLUGINS=local-dir:plugins,vscode:extension/broadinstitute.wdl
 
 ADD settings.json ${WORKSPACE}/.theia/
 
@@ -41,4 +34,4 @@ RUN apk add --no-cache curl docker git && \
 
 USER ${USER}
 
-ENTRYPOINT ["yarn", "theia", "start", "/home/workspace", "--hostname=0.0.0.0", "--plugins=local-dir:plugins"]
+ENTRYPOINT ["yarn", "theia", "start", "/home/workspace", "--hostname=0.0.0.0"]
