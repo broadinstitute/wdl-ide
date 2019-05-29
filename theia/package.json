@@ -20,6 +20,9 @@
     "@theia/textmate-grammars": "next",
     "typescript": "latest"
   },
+  "resolutions": {
+    "vscode-uri": "<=1.0.6"
+  },
   "devDependencies": {
     "@theia/cli": "next"
   }
