@@ -1,4 +1,0 @@
-*.bak
-
-.gitignore
-node_modules/

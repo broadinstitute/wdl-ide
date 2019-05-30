@@ -34,8 +34,7 @@ services:
     - docker-run:/var/lib/docker
     - executions:/executions
   theia:
-    build: ./theia
-    image: theia
+    image: quay.io/broadinstitute/wdl-ide-theia
     ports:
     - 3000:3000
     environment:
