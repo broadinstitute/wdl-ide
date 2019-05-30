@@ -1,0 +1,22 @@
+--- node_modules/@theia/plugin-ext/src/plugin/node/env-node-ext.ts
++++ node_modules/@theia/plugin-ext/src/plugin/node/env-node-ext.ts
+@@ -51,7 +51,7 @@
+      * Provides application root.
+      */
+     get appRoot(): string {
+-        return __dirname;
++        return process.cwd();
+     }
+
+ }
+--- node_modules/@theia/plugin-ext/lib/plugin/node/env-node-ext.js
++++ node_modules/@theia/plugin-ext/lib/plugin/node/env-node-ext.js
+@@ -65,7 +65,7 @@
+          * Provides application root.
+          */
+         get: function () {
+-            return __dirname;
++            return process.cwd();
+         },
+         enumerable: true,
+         configurable: true
