@@ -59,27 +59,6 @@ const getConfig = <T>(uri: Uri | undefined, section: string) => {
 	return config.get<T>(section)!;
 };
 
-const getInputsPath = (storagePath: string, wdlPath: string) => {
-	const fileName = path.basename(wdlPath, '.wdl') + `.inputs.json`;
-	return getFilePath(storagePath, fileName);
-};
-
-const getOptionsPath = (storagePath: string) => {
-	return getFilePath(storagePath, 'options.json');
-};
-
-const getFilePath = async (storagePath: string, fileName: string) => {
-	const filePath = path.join(storagePath, fileName);
-	try {
-		await fs.writeFile(filePath, '{\n\n}', { flag: 'wx' });
-	} catch (err) {
-		if (err.code !== 'EEXIST') {
-			throw err;
-		}
-	}
-	return filePath;
-};
-
 const runAndWait = async (
 	cromwellBaseUri: string,
 	cromwellPollMsec: number,
@@ -93,9 +72,11 @@ const runAndWait = async (
 		await getOptionsPath(storagePath),
 	);
 
+	const title = `Workflow ${id} for ${path.basename(wdlPath)}`;
+
 	return window.withProgress({
+		title,
 		location: ProgressLocation.Notification,
-		title: `Workflow ${id}`,
 		cancellable: true,
 	}, async (progress, token) => {
 		return new Promise<WorkflowResponse>(resolve => {
@@ -110,7 +91,7 @@ const runAndWait = async (
 
 			let oldStatus = '';
 			const checkStopPolling = (status: string) => {
-				const message = `Workflow ${id}: ${status}`;
+				const message = `${title}: ${status}`;
 				switch (status) {
 					case 'Succeeded':
 						window.showInformationMessage(message); break;
@@ -139,6 +120,29 @@ const runAndWait = async (
 			});
 		});
 	});
+};
+
+const getInputsPath = (storagePath: string, wdlPath: string) => {
+	const fileName = path.basename(wdlPath, '.wdl') + `.inputs.json`;
+	return getFilePath(storagePath, fileName);
+};
+
+const getOptionsPath = async (storagePath: string) => {
+	const path = await getFilePath(storagePath, 'options.json');
+	console.log(path);
+	return path;
+};
+
+const getFilePath = async (storagePath: string, fileName: string) => {
+	const filePath = path.join(storagePath, fileName);
+	try {
+		await fs.writeFile(filePath, '{\n\n}', { flag: 'wx' });
+	} catch (err) {
+		if (err.code !== 'EEXIST') {
+			throw err;
+		}
+	}
+	return filePath;
 };
 
 const showError = (err: Error) => {
