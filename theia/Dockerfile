@@ -26,7 +26,9 @@ ADD theia/package.json theia/plugin-ext.patch ./
 RUN yarn
 RUN patch -p0 -N < plugin-ext.patch
 
-RUN yarn theia build
+RUN export NODE_OPTIONS=--max_old_space_size=2048 && \
+    yarn theia build
+
 RUN mkdir plugins
 
 # helper script for VSCode plugin packaging
