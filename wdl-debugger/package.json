@@ -31,7 +31,7 @@
 				"wdl-debugger.cromwell.baseUri": {
 					"type": "string",
 					"description": "Base URI of the Cromwell API",
-					"pattern": "^https?://[\\w.-]+(:\\d+)[/\\w.-]*$",
+					"pattern": "^https?://[\\w.-]+(:\\d+)?[/\\w.-]*$",
 					"default": "http://localhost:8000/api/workflows/v1",
 					"scope": "application"
 				},
