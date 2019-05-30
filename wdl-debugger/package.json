@@ -25,6 +25,12 @@
 				"title": "Run WDL"
 			}
 		],
+		"keybindings": [{
+			"command": "extension.runWDL",
+			"key": "alt+enter",
+			"mac": "cmd+enter",
+			"when": "editorTextFocus"
+		}],
 		"configuration": {
 			"title": "WDL Debugger Configuration",
 			"properties": {
