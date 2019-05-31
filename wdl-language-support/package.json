@@ -1,0 +1,77 @@
+{
+  "name": "wdl-language-support",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "vscode": "^1.34.1"
+  },
+  "categories": [
+    "Programming Languages",
+    "Debuggers"
+  ],
+  "activationEvents": [
+    "onLanguage:wdl"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "countDownBlocking",
+        "title": "Count down 10 seconds [Blocking]"
+      },
+      {
+        "command": "countDownNonBlocking",
+        "title": "Count down 10 seconds [Non Blocking]"
+      },
+      {
+        "command": "registerCompletions",
+        "title": "Register completions"
+      },
+      {
+        "command": "showConfigurationAsync",
+        "title": "Show WDL Example Configuration [Async]"
+      },
+      {
+        "command": "showConfigurationCallback",
+        "title": "Show WDL Example Configuration [Callback]"
+      },
+      {
+        "command": "showConfigurationThread",
+        "title": "Show WDL Example Configuration [Thread]"
+      },
+      {
+        "command": "unregisterCompletions",
+        "title": "Unregister completions"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "WDL Server Configuration",
+      "properties": {
+        "wdlServer.exampleConfiguration": {
+          "scope": "resource",
+          "type": "string",
+          "default": "You can override this message."
+        }
+      }
+    }
+  },
+  "main": "./out/extension",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "vscode-install",
+    "vscode:prepublish": "compile",
+    "vscode": "npm run vscode:prepublish && VSCODE=$(which code-insiders || which code || echo echo ERROR: neither the code nor code-insiders vscode executable is installed); USER=dummy-dont-share-vscode-instance $VSCODE --user-data-dir=$PWD/.vscode-dev/user-data --extensionHomePath=$PWD/.vscode-dev/extensions --extensionDevelopmentPath=$PWD $*"
+  },
+  "devDependencies": {
+    "@types/node": "^8.9.4",
+    "tslint": "^5.16.0",
+    "tslint-microsoft-contrib": "^6.1.1",
+    "tsutils": "^3.10.0",
+    "typescript": "^3.4.5",
+    "vscode": "^1.1.34"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^5.2.1"
+  }
+}
