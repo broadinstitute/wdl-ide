@@ -1,5 +1,16 @@
 *.bak
 *.json
+*.log
+*.vsix
+*.wdl
+
+!.vscode/*.json
+!package.json
+!tsconfig.json
+!tslint.json
 
 .DS_Store
-node_modules/
+
+**/.vscode-test/
+**/node_modules/
+**/out/
