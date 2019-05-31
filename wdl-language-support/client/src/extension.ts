@@ -29,10 +29,10 @@ function getClientOptions(): LanguageClientOptions {
   return {
     // Register the server for plain text documents
     documentSelector: [
-      { scheme: "file", language: "json" },
-      { scheme: "untitled", language: "json" },
+      { scheme: "file", language: "wdl" },
+      { scheme: "untitled", language: "wdl" },
     ],
-    outputChannelName: "[pygls] JsonLanguageServer",
+    outputChannelName: "WDL Language Server",
     synchronize: {
       // Notify the server about file changes to '.clientrc files contain in the workspace
       fileEvents: workspace.createFileSystemWatcher("**/.clientrc"),
