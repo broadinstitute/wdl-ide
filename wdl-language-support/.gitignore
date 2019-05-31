@@ -1,0 +1,8 @@
+*.log
+*.pyc
+
+.vscode-test
+.vscode/settings.json
+
+out
+node_modules
