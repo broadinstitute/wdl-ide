@@ -4,13 +4,13 @@
 *.vsix
 *.wdl
 
-!.vscode/*.json
 !package.json
 !tsconfig.json
 !tslint.json
 
 .DS_Store
 
+!**/.vscode/*.json
 **/.vscode-test/
 **/node_modules/
 **/out/
