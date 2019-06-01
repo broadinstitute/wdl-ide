@@ -62,8 +62,7 @@ def _get_diagnostic(msg, line, col, end_line, end_col):
             Position(line - 1, col - 1),
             Position(end_line - 1, end_col - 1)
         ),
-        msg,
-        source=type(server).__name__
+        msg
     )
 
 def _add_validaton_error(e: WDL.Error.ValidationError):
