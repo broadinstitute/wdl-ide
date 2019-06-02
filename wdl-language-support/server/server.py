@@ -14,10 +14,12 @@ from pygls.types import (
     DidCloseTextDocumentParams,
     Position,
     Range,
+    TextDocumentItem,
 )
 
 import re
 import sys
+from typing import List
 import WDL
 
 class Server(LanguageServer):
@@ -26,64 +28,69 @@ class Server(LanguageServer):
 
 server = Server()
 
-def _validate(ls, params):
+def _validate(ls: LanguageServer, doc: TextDocumentItem):
     ls.show_message_log('Validating WDL...')
 
-    uri = params.textDocument.uri
-    diagnostics = _validate_wdl(ls, uri)
-    ls.publish_diagnostics(uri, diagnostics)
+    diagnostics = _validate_wdl(ls, doc.uri)
+    ls.publish_diagnostics(doc.uri, diagnostics)
 
-
-def _validate_wdl(ls, uri):
+def _validate_wdl(ls: LanguageServer, uri: str):
     """Validates WDL file."""
     try:
         a = WDL.load(uri)
         ls.show_message_log('Validated')
+        return []
 
     except WDL.Error.SyntaxError as e:
-        err = e.args[0]
-        match = re.match("^\(.*\) (.*) at line (\d+) col (\d+)", err)
-        msg = match.group(1)
-        line = int(match.group(2))
-        col = int(match.group(3))
-        return [_get_diagnostic(msg, line, col, line, sys.maxsize)]
+        msg, line, col = _match_err_and_pos(e)
+        return [_diagnostic(msg, line, col, line, sys.maxsize)]
 
     except WDL.Error.ValidationError as e:
-        return [_add_validaton_error(e)]
+        return [_validation_diagnostic(e)]
 
     except WDL.Error.MultipleValidationErrors as errs:
-        return [_add_validaton_error(e) for e in errs.exceptions]
+        return [_validation_diagnostic(e) for e in errs.exceptions]
 
-    return []
+    except WDL.Error.ImportError as e:
+        msg = '{}: {}'.format(_match_err(e), e.__cause__.strerror)
+        return [_diagnostic(msg, 1, 1, 1, 2)]
 
-def _get_diagnostic(msg, line, col, end_line, end_col):
+def _diagnostic(msg, line, col, end_line, end_col):
     return Diagnostic(
         Range(
             Position(line - 1, col - 1),
-            Position(end_line - 1, end_col - 1)
+            Position(end_line - 1, end_col - 1),
         ),
-        msg
+        msg,
     )
 
-def _add_validaton_error(e: WDL.Error.ValidationError):
-    err = e.args[0]
-    msg = re.match("^\(.*\) (.*)", err).group(1)
+def _validation_diagnostic(e: WDL.Error.ValidationError):
+    msg = _match_err(e)
     pos = e.pos
-    return _get_diagnostic(msg, pos.line, pos.column, pos.end_line, pos.end_column)
+    return _diagnostic(msg, pos.line, pos.column, pos.end_line, pos.end_column)
+
+def _match_err(e: Exception):
+    return re.match("^\(.*\) (.*)", e.args[0]).group(1)
+
+def _match_err_and_pos(e: Exception):
+    match = re.match("^\(.*\) (.*) at line (\d+) col (\d+)", e.args[0])
+    return match.group(1), int(match.group(2)), int(match.group(3))
+
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls, params: DidOpenTextDocumentParams):
+async def did_open(ls: LanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     ls.show_message('Text Document Did Open')
-    _validate(ls, params)
+    _validate(ls, params.textDocument)
+
 
 @server.feature(TEXT_DOCUMENT_DID_SAVE)
-def did_change(ls, params: DidSaveTextDocumentParams):
+def did_change(ls: LanguageServer, params: DidSaveTextDocumentParams):
     """Text document did change notification."""
-    _validate(ls, params)
+    _validate(ls, params.textDocument)
 
 
 @server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(server: Server, params: DidCloseTextDocumentParams):
+def did_close(ls: LanguageServer, params: DidCloseTextDocumentParams):
     """Text document did close notification."""
-    server.show_message('Text Document Did Close')
+    ls.show_message('Text Document Did Close')
