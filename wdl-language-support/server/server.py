@@ -19,7 +19,6 @@ from pygls.types import (
 
 import re
 import sys
-from typing import List
 import WDL
 
 class Server(LanguageServer):
@@ -35,7 +34,6 @@ def _validate(ls: LanguageServer, doc: TextDocumentItem):
     ls.publish_diagnostics(doc.uri, diagnostics)
 
 def _validate_wdl(ls: LanguageServer, uri: str):
-    """Validates WDL file."""
     try:
         a = WDL.load(uri)
         ls.show_message_log('Validated')
