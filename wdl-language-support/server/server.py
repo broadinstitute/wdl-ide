@@ -1,6 +1,8 @@
 ### This file has been adopted from
 ### https://github.com/openlawlibrary/pygls/blob/master/examples/json-extension/server/server.py
 
+from functools import wraps
+
 from pygls.features import (
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_SAVE,
@@ -12,6 +14,7 @@ from pygls.types import (
     DidOpenTextDocumentParams,
     DidSaveTextDocumentParams,
     DidCloseTextDocumentParams,
+    MessageType,
     Position,
     Range,
     TextDocumentItem,
@@ -19,21 +22,32 @@ from pygls.types import (
 
 import re
 import sys
+from typing import Callable
+
 import WDL
 
 class Server(LanguageServer):
     def __init__(self):
         super().__init__()
 
+    def catch_error(self, func: Callable) -> Callable:
+        @wraps(func)
+        async def decorator(*args, **kwargs):
+            try:
+                return await func(*args, **kwargs)
+            except Exception as e:
+                self.show_message(e, MessageType.Error)
+        return decorator
+
 server = Server()
 
-def _validate(ls: LanguageServer, doc: TextDocumentItem):
+def _validate(ls: Server, doc: TextDocumentItem):
     ls.show_message_log('Validating WDL...')
 
     diagnostics = _validate_wdl(ls, doc.uri)
     ls.publish_diagnostics(doc.uri, diagnostics)
 
-def _validate_wdl(ls: LanguageServer, uri: str):
+def _validate_wdl(ls: Server, uri: str):
     try:
         a = WDL.load(uri)
         ls.show_message_log('Validated')
@@ -76,19 +90,22 @@ def _match_err_and_pos(e: Exception):
 
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls: LanguageServer, params: DidOpenTextDocumentParams):
+@server.catch_error
+async def did_open(ls: Server, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     ls.show_message('Text Document Did Open')
-    _validate(ls, params.textDocument)
+    await _validate(ls, params.textDocument)
 
 
 @server.feature(TEXT_DOCUMENT_DID_SAVE)
-def did_change(ls: LanguageServer, params: DidSaveTextDocumentParams):
+@server.catch_error
+async def did_save(ls: Server, params: DidSaveTextDocumentParams):
     """Text document did change notification."""
-    _validate(ls, params.textDocument)
+    await _validate(ls, params.textDocument)
 
 
 @server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(ls: LanguageServer, params: DidCloseTextDocumentParams):
+@server.catch_error
+def did_close(ls: Server, params: DidCloseTextDocumentParams):
     """Text document did close notification."""
     ls.show_message('Text Document Did Close')
