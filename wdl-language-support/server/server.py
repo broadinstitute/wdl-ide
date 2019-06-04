@@ -1,6 +1,7 @@
 ### This file has been adopted from
 ### https://github.com/openlawlibrary/pygls/blob/master/examples/json-extension/server/server.py
 
+from asyncio import get_event_loop
 from functools import wraps
 
 from pygls.features import (
@@ -41,15 +42,18 @@ class Server(LanguageServer):
 
 server = Server()
 
-def _validate(ls: Server, doc: TextDocumentItem):
+def _async(func: Callable):
+    return get_event_loop().run_in_executor(None, func)
+
+async def _validate(ls: Server, uri: str):
     ls.show_message_log('Validating WDL...')
 
-    diagnostics = _validate_wdl(ls, doc.uri)
-    ls.publish_diagnostics(doc.uri, diagnostics)
+    diagnostics = await _validate_wdl(ls, uri)
+    ls.publish_diagnostics(uri, diagnostics)
 
-def _validate_wdl(ls: Server, uri: str):
+async def _validate_wdl(ls: Server, uri: str):
     try:
-        a = WDL.load(uri)
+        await _async(lambda: WDL.load(uri))
         ls.show_message_log('Validated')
         return []
 
@@ -93,19 +97,21 @@ def _match_err_and_pos(e: Exception):
 @server.catch_error
 async def did_open(ls: Server, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-    ls.show_message('Text Document Did Open')
-    await _validate(ls, params.textDocument)
-
+    uri = params.textDocument.uri
+    ls.show_message_log('Opened {}'.format(uri))
+    await _validate(ls, uri)
 
 @server.feature(TEXT_DOCUMENT_DID_SAVE)
 @server.catch_error
 async def did_save(ls: Server, params: DidSaveTextDocumentParams):
     """Text document did change notification."""
-    await _validate(ls, params.textDocument)
-
+    uri = params.textDocument.uri
+    ls.show_message_log('Saved {}'.format(uri))
+    await _validate(ls, uri)
 
 @server.feature(TEXT_DOCUMENT_DID_CLOSE)
 @server.catch_error
 def did_close(ls: Server, params: DidCloseTextDocumentParams):
     """Text document did close notification."""
-    ls.show_message('Text Document Did Close')
+    uri = params.textDocument.uri
+    ls.show_message_log('Closed {}'.format(uri))
