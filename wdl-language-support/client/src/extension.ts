@@ -23,14 +23,16 @@ import * as path from "path";
 import { ExtensionContext, workspace } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient";
 
+const language = "wdl";
+
 let client: LanguageClient;
 
 function getClientOptions(): LanguageClientOptions {
   return {
     // Register the server for plain text documents
     documentSelector: [
-      { scheme: "file", language: "wdl" },
-      { scheme: "untitled", language: "wdl" },
+      { scheme: "file", language },
+      { scheme: "untitled", language },
     ],
     outputChannelName: "WDL Language Server",
     synchronize: {
@@ -57,7 +59,7 @@ function startLangServerTCP(addr: number): LanguageClient {
     });
   };
 
-  return new LanguageClient(`tcp lang server (port ${addr})`, serverOptions, getClientOptions());
+  return new LanguageClient(language, serverOptions, getClientOptions());
 }
 
 function startLangServer(
@@ -69,7 +71,7 @@ function startLangServer(
     options: { cwd },
   };
 
-  return new LanguageClient(command, serverOptions, getClientOptions());
+  return new LanguageClient(language, serverOptions, getClientOptions());
 }
 
 export function activate(context: ExtensionContext) {
