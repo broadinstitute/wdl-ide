@@ -90,6 +90,7 @@ export function activate(context: ExtensionContext) {
     client = startLangServer(pythonPath, ["-m", "server"], cwd);
   }
 
+  client.registerProposedFeatures();
   context.subscriptions.push(client.start());
 }
 
