@@ -31,7 +31,7 @@ from pygls.types import (
 
 import re, sys
 from requests import HTTPError
-from typing import Callable, List, Set
+from typing import Callable, List, Set, Union
 from urllib.parse import urlparse
 
 import WDL
@@ -69,33 +69,36 @@ async def _get_client_config(ls: Server):
     ]))
     return config[0]
 
-async def _validate(ls: Server, uri: str):
+async def parse_wdl(ls: Server, uri: str):
     ls.show_message_log('Validating WDL...')
 
-    diagnostics = await _validate_wdl(ls, uri)
-    ls.publish_diagnostics(uri, diagnostics)
+    diagnostics, wdl = await _parse_wdl(uri)
 
-async def _validate_wdl(ls: Server, uri: str):
+    ls.show_message_log('Validated')
+    ls.publish_diagnostics(uri, diagnostics)
+    return diagnostics, wdl
+
+async def _parse_wdl(uri: str):
     try:
-        await _async(lambda: WDL.load(uri))
-        ls.show_message_log('Validated')
-        return []
+        wdl = await _async(lambda: WDL.load(uri))
+        return [], wdl
 
     except WDL.Error.SyntaxError as e:
-        msg, line, col = _match_err_and_pos(e)
-        return [_diagnostic(msg, line, col, line, sys.maxsize)]
+        return [_diagnostic(*_match_err_and_pos(e))], None
 
     except WDL.Error.ValidationError as e:
-        return [_validation_diagnostic(e)]
+        return [_validation_diagnostic(e)], None
 
     except WDL.Error.MultipleValidationErrors as errs:
-        return [_validation_diagnostic(e) for e in errs.exceptions]
+        return [_validation_diagnostic(e) for e in errs.exceptions], None
 
     except WDL.Error.ImportError as e:
         msg = '{}: {}'.format(_match_err(e), e.__cause__.strerror)
-        return [_diagnostic(msg, 1, 1, 1, 2)]
+        return [_diagnostic(msg)], None
 
-def _diagnostic(msg, line, col, end_line, end_col):
+def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxsize):
+    if end_line is None:
+        end_line = line
     return Diagnostic(
         Range(
             Position(line - 1, col - 1),
@@ -104,10 +107,11 @@ def _diagnostic(msg, line, col, end_line, end_col):
         msg,
     )
 
-def _validation_diagnostic(e: WDL.Error.ValidationError):
-    msg = _match_err(e)
-    pos = e.pos
+def _diagnostic_pos(msg: str, pos: WDL.SourcePosition):
     return _diagnostic(msg, pos.line, pos.column, pos.end_line, pos.end_column)
+
+def _validation_diagnostic(e: WDL.Error.ValidationError):
+    return _diagnostic_pos(_match_err(e), e.pos)
 
 def _match_err(e: Exception):
     return re.match("^\(.*\) (.*)", str(e)).group(1)
@@ -123,7 +127,7 @@ async def did_open(ls: Server, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     uri = params.textDocument.uri
     ls.show_message_log('Opened {}'.format(uri))
-    await _validate(ls, uri)
+    await parse_wdl(ls, uri)
 
 @server.feature(TEXT_DOCUMENT_DID_SAVE)
 @server.catch_error
@@ -131,7 +135,7 @@ async def did_save(ls: Server, params: DidSaveTextDocumentParams):
     """Text document did change notification."""
     uri = params.textDocument.uri
     ls.show_message_log('Saved {}'.format(uri))
-    await _validate(ls, uri)
+    await parse_wdl(ls, uri)
 
 @server.feature(TEXT_DOCUMENT_DID_CLOSE)
 @server.catch_error
@@ -161,8 +165,11 @@ async def code_action(ls: Server, params: CodeActionParams):
 @server.catch_error
 async def run_wdl(ls: Server, params: List[RunWDLParams]):
     wdl_uri = params[0].wdl_uri
-    await _validate(ls, wdl_uri)
     wdl_path = urlparse(wdl_uri).path
+
+    diagnostics, wdl = await parse_wdl(ls, wdl_uri)
+    if diagnostics:
+        return ls.show_message('Unable to submit: WDL contains error(s)', MessageType.Error)
 
     config = await _get_client_config(ls)
     auth = CromwellAuth.from_no_authentication(config.cromwell.url)
@@ -200,7 +207,10 @@ async def run_wdl(ls: Server, params: List[RunWDLParams]):
                 'id': id,
             })
             message = '{}: {}'.format(title, status)
-            return ls.show_message(message, message_type)
+            ls.show_message(message, message_type)
+
+            diagnostics = await _parse_failures(wdl, wdl_uri, id, auth)
+            return ls.publish_diagnostics(wdl_uri, diagnostics)
 
         await sleep(config.cromwell.pollSec)
 
@@ -227,3 +237,68 @@ def _progress(ls: Server, action: str, params):
 @server.catch_error
 async def abort_workflow(ls: Server, params):
     cancel_workflows.add(params.id)
+
+async def _parse_failures(wdl: WDL.Document, wdl_uri: str, id: str, auth: CromwellAuth):
+    workflow = await _request(lambda: cromwell_api.metadata(
+        id, auth,
+        includeKey=['status', 'executionStatus', 'failures', 'stderr'],
+        expandSubWorkflows=True,
+        raise_for_status=True,
+    ))
+    if workflow['status'] != 'Failed':
+        return
+
+    if 'calls' in workflow:
+        diagnostics: List[Diagnostic] = []
+        elements = wdl.workflow.elements
+
+        for call, attempts in workflow['calls'].items():
+            for attempt in attempts:
+                if attempt['executionStatus'] == 'Failed':
+                    pos = _find_call(wdl.workflow.elements, wdl.workflow.name, call)
+                    failures = _collect_failures(attempt['failures'])
+
+                    stderr = await _download(attempt['stderr'])
+                    if stderr is not None:
+                        failures.append(stderr)
+
+                    msg = '\n\n'.join(failures)
+                    diagnostics.append(_diagnostic_pos(msg, pos))
+        return diagnostics
+    else:
+        failures = _collect_failures(workflow['failures'])
+        msg = '\n\n'.join(failures)
+        return [_diagnostic(msg)]
+
+class CausedBy:
+    def __init__(self, causedBy: List['CausedBy'], message: str):
+        self.causedBy = causedBy
+        self.message = message
+
+def _collect_failures(causedBy: List[CausedBy], failures: List[str] = []):
+    for failure in causedBy:
+        if failure['causedBy']:
+            _collect_failures(failure['causedBy'], failures)
+        failures.append(failure['message'])
+    return failures
+
+WorkflowElements = List[Union[WDL.Decl, WDL.Call, WDL.Scatter, WDL.Conditional]]
+
+def _find_call(elements: WorkflowElements, wf_name: str, call_name: str):
+    found: WDL.SourcePosition = None
+    for el in elements:
+        if found:
+            break
+        elif isinstance(el, WDL.Call) and '{}.{}'.format(wf_name, el.name) == call_name:
+            found = el.pos
+        elif isinstance(el, WDL.Conditional) or isinstance(el, WDL.Scatter):
+            found = _find_call(el.elements)
+    return found
+
+async def _download(url: str):
+    if url.startswith('/'):
+        try:
+            with open(url, 'r') as file:
+                return await _async(file.read)
+        except:
+            pass
