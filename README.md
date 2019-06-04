@@ -9,7 +9,10 @@ and is not yet feature-complete.
 ## Editor-agnostic WDL support
 
 We will provide a WDL Language Server plugin, based on
-[Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/).
+[Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/),
+[cromwell-tools](https://cromwell-tools.readthedocs.io),
+[pygls](https://pygls.readthedocs.io),
+and [miniwdl](https://miniwdl.readthedocs.io).
 
 This protocol is supported by many code editors, and
 enables **universal** support for language features.
