@@ -1,5 +1,9 @@
 {
   "name": "wdl-language-support",
+  "displayName": "WDL Language Support",
+	"description": "Run and debug WDL code",
+  "publisher": "broadinstitute",
+  "repository": "https://github.com/broadinstitute/wdl-ide-vscode/wdl-language-support",
   "version": "0.0.1",
   "private": true,
   "engines": {
@@ -16,8 +20,7 @@
     "keybindings": [
       {
         "command": "editor.action.codeAction",
-        "key": "alt+enter",
-        "mac": "cmd+enter",
+        "key": "shift+enter",
         "args": {
           "kind": "wdl.run"
         }
@@ -28,7 +31,7 @@
       "properties": {
         "wdl.cromwell.url": {
           "type": "string",
-          "description": "Base URI of the Cromwell API",
+          "description": "Base URL of the Cromwell API",
           "pattern": "^https?://[\\w.-]+(:\\d+)?[/\\w.-]*$",
           "default": "http://localhost:8000",
           "scope": "application"
@@ -48,7 +51,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "postinstall": "vscode-install",
-    "vscode:prepublish": "compile",
+    "vscode:prepublish": "yarn compile",
     "vscode": "npm run vscode:prepublish && VSCODE=$(which code-insiders || which code || echo echo ERROR: neither the code nor code-insiders vscode executable is installed); USER=dummy-dont-share-vscode-instance $VSCODE --user-data-dir=$PWD/.vscode-dev/user-data --extensionHomePath=$PWD/.vscode-dev/extensions --extensionDevelopmentPath=$PWD $*"
   },
   "devDependencies": {

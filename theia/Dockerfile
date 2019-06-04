@@ -44,15 +44,17 @@ WORKDIR /vscode/extensions/docker
 
 RUN /tmp/vsce-package.sh
 
-# WDL Debugger plugin
+# WDL Language Support plugin
 
-WORKDIR /tmp/wdl-debugger
+WORKDIR /tmp/wdl-language-support
 
-ADD wdl-debugger/package.json .
+ADD wdl-language-support/package.json .
 RUN yarn
 
-ADD wdl-debugger/ .
+ADD wdl-language-support/ .
 RUN /tmp/vsce-package.sh
+
+RUN cp server/requirements.txt ${THEIA_DIR}/
 
 ## ----------------------------------
 ## Copy packages into the final image
@@ -70,7 +72,9 @@ RUN apk add --no-cache \
       docker \
       git \
       libsecret \
+      python3 \
     && \
+    pip3 install -r requirements.txt && \
     adduser -S ${USER} && \
     mkdir /home/${USER}/workspace && \
     chown -R ${USER} /home/${USER}

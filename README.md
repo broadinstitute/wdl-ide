@@ -1,4 +1,4 @@
-# VS Code IDE for WDL
+# IDE for WDL
 
 This project aims to provide a "batteries-included" environment
 for developing [WDL](http://www.openwdl.org/) workflows.
@@ -6,10 +6,17 @@ for developing [WDL](http://www.openwdl.org/) workflows.
 **Please note:** it is currently under active **development**,
 and is not yet feature-complete.
 
-## Debugger Extension
+## Editor-agnostic WDL support
 
-We will create an extension for [Visual Studio Code](https://code.visualstudio.com/) to
-- [x] submit workflows for execution to a [Cromwell](https://cromwell.readthedocs.io) API
+We will provide a WDL Language Server plugin, based on
+[Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/).
+
+This protocol is supported by many code editors, and
+enables **universal** support for language features.
+
+More specifically, our plugin will enable you to:
+- [x] check the syntax of a workflow
+- [x] submit a workflow for execution to [Cromwell](https://cromwell.readthedocs.io) API
 - [x] watch for completion/failure of each workflow (or cancel it)
 - [ ] highlight task-specific failures
 - [ ] provide feedback on runtime resource management
@@ -19,8 +26,8 @@ We will create an extension for [Visual Studio Code](https://code.visualstudio.c
 Additionally, we provide an Integrated Development Environment (IDE),
 which runs in a web browser and is based on [Theia](https://www.theia-ide.org/).
 
-It bundles WDL extensions for VS Code -
-[Debugger](#debugger-extension) and
+It bundles WDL extensions for [Visual Studio Code](https://code.visualstudio.com/) -
+[Language Support](wdl-language-support) and
 [Syntax Highlighter](https://marketplace.visualstudio.com/items?itemName=broadinstitute.wdl) -
 along with a "local" instance of Cromwell.
 
