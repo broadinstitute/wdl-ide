@@ -13,44 +13,32 @@
     "onLanguage:wdl"
   ],
   "contributes": {
-    "commands": [
+    "keybindings": [
       {
-        "command": "countDownBlocking",
-        "title": "Count down 10 seconds [Blocking]"
-      },
-      {
-        "command": "countDownNonBlocking",
-        "title": "Count down 10 seconds [Non Blocking]"
-      },
-      {
-        "command": "registerCompletions",
-        "title": "Register completions"
-      },
-      {
-        "command": "showConfigurationAsync",
-        "title": "Show WDL Example Configuration [Async]"
-      },
-      {
-        "command": "showConfigurationCallback",
-        "title": "Show WDL Example Configuration [Callback]"
-      },
-      {
-        "command": "showConfigurationThread",
-        "title": "Show WDL Example Configuration [Thread]"
-      },
-      {
-        "command": "unregisterCompletions",
-        "title": "Unregister completions"
+        "command": "editor.action.codeAction",
+        "key": "alt+enter",
+        "mac": "cmd+enter",
+        "args": {
+          "kind": "wdl.run"
+        }
       }
     ],
     "configuration": {
-      "type": "object",
-      "title": "WDL Server Configuration",
+      "title": "WDL Language Server Configuration",
       "properties": {
-        "wdlServer.exampleConfiguration": {
-          "scope": "resource",
+        "wdl.cromwell.url": {
           "type": "string",
-          "default": "You can override this message."
+          "description": "Base URI of the Cromwell API",
+          "pattern": "^https?://[\\w.-]+(:\\d+)?[/\\w.-]*$",
+          "default": "http://localhost:8000",
+          "scope": "application"
+        },
+        "wdl.cromwell.pollSec": {
+          "type": "integer",
+          "description": "Polling interval of Cromwell API, in seconds",
+          "minimum": 5,
+          "default": 5,
+          "scope": "application"
         }
       }
     }

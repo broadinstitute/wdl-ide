@@ -1,16 +1,24 @@
 ### This file has been adopted from
 ### https://github.com/openlawlibrary/pygls/blob/master/examples/json-extension/server/server.py
 
-from asyncio import get_event_loop
+from asyncio import get_event_loop, sleep
+
+from cromwell_tools import api as cromwell_api
+from cromwell_tools.cromwell_auth import CromwellAuth
+
 from functools import wraps
 
 from pygls.features import (
+    CODE_ACTION,
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_SAVE,
     TEXT_DOCUMENT_DID_CLOSE,
 )
 from pygls.server import LanguageServer
 from pygls.types import (
+    CodeActionParams,
+    ConfigurationItem,
+    ConfigurationParams,
     Diagnostic,
     DidOpenTextDocumentParams,
     DidSaveTextDocumentParams,
@@ -21,13 +29,19 @@ from pygls.types import (
     TextDocumentItem,
 )
 
-import re
-import sys
-from typing import Callable
+import re, sys
+from requests import HTTPError
+from typing import Callable, List, Set
+from urllib.parse import urlparse
 
 import WDL
 
 class Server(LanguageServer):
+    SERVER_NAME = 'wdl'
+    CONFIG_SECTION = SERVER_NAME
+
+    CMD_RUN_WDL = SERVER_NAME + '.run'
+
     def __init__(self):
         super().__init__()
 
@@ -44,6 +58,16 @@ server = Server()
 
 def _async(func: Callable):
     return get_event_loop().run_in_executor(None, func)
+
+async def _request(func: Callable):
+    response = await _async(func)
+    return response.json()
+
+async def _get_client_config(ls: Server):
+    config = await ls.get_configuration_async(ConfigurationParams([
+        ConfigurationItem(section=Server.CONFIG_SECTION)
+    ]))
+    return config[0]
 
 async def _validate(ls: Server, uri: str):
     ls.show_message_log('Validating WDL...')
@@ -115,3 +139,91 @@ def did_close(ls: Server, params: DidCloseTextDocumentParams):
     """Text document did close notification."""
     uri = params.textDocument.uri
     ls.show_message_log('Closed {}'.format(uri))
+
+
+class RunWDLParams:
+    def __init__(self, wdl_uri: str):
+        self.wdl_uri = wdl_uri
+
+@server.feature(CODE_ACTION)
+@server.catch_error
+async def code_action(ls: Server, params: CodeActionParams):
+    return [{
+        'title': 'Run WDL',
+        'kind': Server.CMD_RUN_WDL,
+        'command': {
+            'command': Server.CMD_RUN_WDL,
+            'arguments': [RunWDLParams(params.textDocument.uri)],
+        },
+    }]
+
+@server.command(Server.CMD_RUN_WDL)
+@server.catch_error
+async def run_wdl(ls: Server, params: List[RunWDLParams]):
+    wdl_uri = params[0].wdl_uri
+    await _validate(ls, wdl_uri)
+    wdl_path = urlparse(wdl_uri).path
+
+    config = await _get_client_config(ls)
+    auth = CromwellAuth.from_no_authentication(config.cromwell.url)
+    workflow = await _request(lambda: cromwell_api.submit(
+        auth, wdl_path, raise_for_status=True,
+    ))
+    id = workflow['id']
+
+    title = 'Workflow {} for {}'.format(id, wdl_path)
+    _progress(ls, 'start', {
+        'id': id,
+        'title': title,
+        'cancellable': True,
+        'message': workflow['status'],
+    })
+
+    status: str = ''
+    while True:
+        if status != workflow['status']:
+            status = workflow['status']
+            if status == 'Succeeded':
+                message_type = MessageType.Info
+            elif status in ('Aborting', 'Aborted'):
+                message_type = MessageType.Warning
+            elif status == 'Failed':
+                message_type = MessageType.Error
+            else:
+                _progress(ls, 'report', {
+                    'id': id,
+                    'message': status,
+                })
+                continue
+
+            _progress(ls, 'done', {
+                'id': id,
+            })
+            message = '{}: {}'.format(title, status)
+            return ls.show_message(message, message_type)
+
+        await sleep(config.cromwell.pollSec)
+
+        if id in cancel_workflows:
+            workflow = await _request(lambda: cromwell_api.abort(
+                id, auth, raise_for_status=True,
+            ))
+            cancel_workflows.remove(id)
+            continue
+
+        try:
+            workflow = await _request(lambda: cromwell_api.status(
+                id, auth, raise_for_status=True,
+            ))
+        except HTTPError as e:
+            ls.show_message_log(str(e), MessageType.Error)
+
+cancel_workflows: Set[str] = set()
+
+def _progress(ls: Server, action: str, params):
+    ls.send_notification('window/progress/' + action, params)
+
+@server.feature('window/progress/cancel')
+@server.catch_error
+async def abort_workflow(ls: Server, params):
+    cancel_workflows.add(params.id)
