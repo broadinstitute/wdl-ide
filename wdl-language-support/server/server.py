@@ -248,15 +248,16 @@ async def _parse_failures(wdl: WDL.Document, wdl_uri: str, id: str, auth: Cromwe
     if workflow['status'] != 'Failed':
         return
 
-    if 'calls' in workflow:
+    calls = workflow['calls']
+    if calls:
         diagnostics: List[Diagnostic] = []
         elements = wdl.workflow.elements
 
-        for call, attempts in workflow['calls'].items():
+        for call, attempts in calls.items():
             for attempt in attempts:
                 if attempt['executionStatus'] == 'Failed':
                     pos = _find_call(wdl.workflow.elements, wdl.workflow.name, call)
-                    failures = _collect_failures(attempt['failures'])
+                    failures = _collect_failures(attempt['failures'], [])
 
                     stderr = await _download(attempt['stderr'])
                     if stderr is not None:
@@ -266,7 +267,7 @@ async def _parse_failures(wdl: WDL.Document, wdl_uri: str, id: str, auth: Cromwe
                     diagnostics.append(_diagnostic_pos(msg, pos))
         return diagnostics
     else:
-        failures = _collect_failures(workflow['failures'])
+        failures = _collect_failures(workflow['failures'], [])
         msg = '\n\n'.join(failures)
         return [_diagnostic(msg)]
 
@@ -275,7 +276,7 @@ class CausedBy:
         self.causedBy = causedBy
         self.message = message
 
-def _collect_failures(causedBy: List[CausedBy], failures: List[str] = []):
+def _collect_failures(causedBy: List[CausedBy], failures: List[str]):
     for failure in causedBy:
         if failure['causedBy']:
             _collect_failures(failure['causedBy'], failures)
@@ -292,7 +293,7 @@ def _find_call(elements: WorkflowElements, wf_name: str, call_name: str):
         elif isinstance(el, WDL.Call) and '{}.{}'.format(wf_name, el.name) == call_name:
             found = el.pos
         elif isinstance(el, WDL.Conditional) or isinstance(el, WDL.Scatter):
-            found = _find_call(el.elements)
+            found = _find_call(el.elements, wf_name, call_name)
     return found
 
 async def _download(url: str):
