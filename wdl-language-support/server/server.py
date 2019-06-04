@@ -36,7 +36,7 @@ class Server(LanguageServer):
             try:
                 return await func(*args, **kwargs)
             except Exception as e:
-                self.show_message(e, MessageType.Error)
+                self.show_message(str(e), MessageType.Error)
         return decorator
 
 server = Server()
@@ -82,10 +82,10 @@ def _validation_diagnostic(e: WDL.Error.ValidationError):
     return _diagnostic(msg, pos.line, pos.column, pos.end_line, pos.end_column)
 
 def _match_err(e: Exception):
-    return re.match("^\(.*\) (.*)", e.args[0]).group(1)
+    return re.match("^\(.*\) (.*)", str(e)).group(1)
 
 def _match_err_and_pos(e: Exception):
-    match = re.match("^\(.*\) (.*) at line (\d+) col (\d+)", e.args[0])
+    match = re.match("^\(.*\) (.*) at line (\d+) col (\d+)", str(e))
     return match.group(1), int(match.group(2)), int(match.group(3))
 
 
