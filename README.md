@@ -21,7 +21,7 @@ More specifically, our plugin will enable you to:
 - [x] check the syntax of a workflow
 - [x] submit a workflow for execution to [Cromwell](https://cromwell.readthedocs.io) API
 - [x] watch for completion/failure of each workflow (or cancel it)
-- [ ] highlight task-specific failures
+- [x] highlight task-specific failures
 - [ ] get feedback on runtime resource management
 - [ ] enjoy rich editor support (jump to definition etc.)
 
