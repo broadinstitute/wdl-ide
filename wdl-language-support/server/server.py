@@ -5,6 +5,7 @@ from asyncio import get_event_loop, sleep
 
 from cromwell_tools import api as cromwell_api
 from cromwell_tools.cromwell_auth import CromwellAuth
+from cromwell_tools.utilities import download
 
 from functools import wraps
 
@@ -45,13 +46,18 @@ class Server(LanguageServer):
     def __init__(self):
         super().__init__()
 
-    def catch_error(self, func: Callable) -> Callable:
-        @wraps(func)
-        async def decorator(*args, **kwargs):
-            try:
-                return await func(*args, **kwargs)
-            except Exception as e:
-                self.show_message(str(e), MessageType.Error)
+    def catch_error(self, log = False):
+        def decorator(func: Callable):
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                try:
+                    return await func(*args, **kwargs)
+                except Exception as e:
+                    if log:
+                        self.show_message_log(str(e), MessageType.Error)
+                    else:
+                        self.show_message(str(e), MessageType.Error)
+            return wrapper
         return decorator
 
 server = Server()
@@ -122,7 +128,7 @@ def _match_err_and_pos(e: Exception):
 
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
-@server.catch_error
+@server.catch_error()
 async def did_open(ls: Server, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     uri = params.textDocument.uri
@@ -130,7 +136,7 @@ async def did_open(ls: Server, params: DidOpenTextDocumentParams):
     await parse_wdl(ls, uri)
 
 @server.feature(TEXT_DOCUMENT_DID_SAVE)
-@server.catch_error
+@server.catch_error()
 async def did_save(ls: Server, params: DidSaveTextDocumentParams):
     """Text document did change notification."""
     uri = params.textDocument.uri
@@ -138,7 +144,7 @@ async def did_save(ls: Server, params: DidSaveTextDocumentParams):
     await parse_wdl(ls, uri)
 
 @server.feature(TEXT_DOCUMENT_DID_CLOSE)
-@server.catch_error
+@server.catch_error()
 def did_close(ls: Server, params: DidCloseTextDocumentParams):
     """Text document did close notification."""
     uri = params.textDocument.uri
@@ -150,7 +156,7 @@ class RunWDLParams:
         self.wdl_uri = wdl_uri
 
 @server.feature(CODE_ACTION)
-@server.catch_error
+@server.catch_error()
 async def code_action(ls: Server, params: CodeActionParams):
     return [{
         'title': 'Run WDL',
@@ -162,7 +168,7 @@ async def code_action(ls: Server, params: CodeActionParams):
     }]
 
 @server.command(Server.CMD_RUN_WDL)
-@server.catch_error
+@server.catch_error()
 async def run_wdl(ls: Server, params: List[RunWDLParams]):
     wdl_uri = params[0].wdl_uri
     wdl_path = urlparse(wdl_uri).path
@@ -234,7 +240,7 @@ def _progress(ls: Server, action: str, params):
     ls.send_notification('window/progress/' + action, params)
 
 @server.feature('window/progress/cancel')
-@server.catch_error
+@server.catch_error()
 async def abort_workflow(ls: Server, params):
     cancel_workflows.add(params.id)
 
@@ -296,10 +302,7 @@ def _find_call(elements: WorkflowElements, wf_name: str, call_name: str):
             found = _find_call(el.elements, wf_name, call_name)
     return found
 
+@server.catch_error(log=True)
 async def _download(url: str):
-    if url.startswith('/'):
-        try:
-            with open(url, 'r') as file:
-                return await _async(file.read)
-        except:
-            pass
+    raw = await _async(lambda: download(url))
+    return str(raw, 'utf-8')
