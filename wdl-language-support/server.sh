@@ -3,4 +3,4 @@
 export PYTHONPATH=$(dirname "$0")
 PATH=$PATH:/usr/local/bin
 
-$(which python3) -m server
+exec $(which python3) -m server
