@@ -1,8 +1,6 @@
 ### This file has been adopted from
 ### https://github.com/openlawlibrary/pygls/blob/master/examples/json-extension/server/server.py
 
-from asyncio import get_event_loop, sleep
-
 from cromwell_tools import api as cromwell_api
 from cromwell_tools.cromwell_auth import CromwellAuth
 from cromwell_tools.utilities import download
@@ -32,7 +30,8 @@ from pygls.types import (
 
 import re, sys
 from requests import HTTPError
-from typing import Callable, List, Set, Union
+from time import sleep
+from typing import Callable, List, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import WDL
@@ -49,9 +48,9 @@ class Server(LanguageServer):
     def catch_error(self, log = False):
         def decorator(func: Callable):
             @wraps(func)
-            async def wrapper(*args, **kwargs):
+            def wrapper(*args, **kwargs):
                 try:
-                    return await func(*args, **kwargs)
+                    return func(*args, **kwargs)
                 except Exception as e:
                     if log:
                         self.show_message_log(str(e), MessageType.Error)
@@ -62,31 +61,24 @@ class Server(LanguageServer):
 
 server = Server()
 
-def _async(func: Callable):
-    return get_event_loop().run_in_executor(None, func)
-
-async def _request(func: Callable):
-    response = await _async(func)
-    return response.json()
-
-async def _get_client_config(ls: Server):
-    config = await ls.get_configuration_async(ConfigurationParams([
+def _get_client_config(ls: Server):
+    config = ls.get_configuration(ConfigurationParams([
         ConfigurationItem(section=Server.CONFIG_SECTION)
-    ]))
+    ])).result()
     return config[0]
 
-async def parse_wdl(ls: Server, uri: str):
+def parse_wdl(ls: Server, uri: str):
     ls.show_message_log('Validating WDL...')
 
-    diagnostics, wdl = await _parse_wdl(uri)
+    diagnostics, wdl = _parse_wdl(uri)
 
     ls.show_message_log('Validated')
     ls.publish_diagnostics(uri, diagnostics)
     return diagnostics, wdl
 
-async def _parse_wdl(uri: str):
+def _parse_wdl(uri: str):
     try:
-        wdl = await _async(lambda: WDL.load(uri))
+        wdl = WDL.load(uri)
         return [], wdl
 
     except WDL.Error.MultipleValidationErrors as errs:
@@ -117,21 +109,23 @@ def _diagnostic_err(e: WDLError):
     return _diagnostic_pos(msg, e.pos)
 
 
+@server.thread()
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
 @server.catch_error()
-async def did_open(ls: Server, params: DidOpenTextDocumentParams):
+def did_open(ls: Server, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     uri = params.textDocument.uri
     ls.show_message_log('Opened {}'.format(uri))
-    await parse_wdl(ls, uri)
+    parse_wdl(ls, uri)
 
+@server.thread()
 @server.feature(TEXT_DOCUMENT_DID_SAVE)
 @server.catch_error()
-async def did_save(ls: Server, params: DidSaveTextDocumentParams):
+def did_save(ls: Server, params: DidSaveTextDocumentParams):
     """Text document did change notification."""
     uri = params.textDocument.uri
     ls.show_message_log('Saved {}'.format(uri))
-    await parse_wdl(ls, uri)
+    parse_wdl(ls, uri)
 
 @server.feature(TEXT_DOCUMENT_DID_CLOSE)
 @server.catch_error()
@@ -140,14 +134,13 @@ def did_close(ls: Server, params: DidCloseTextDocumentParams):
     uri = params.textDocument.uri
     ls.show_message_log('Closed {}'.format(uri))
 
-
 class RunWDLParams:
     def __init__(self, wdl_uri: str):
         self.wdl_uri = wdl_uri
 
 @server.feature(CODE_ACTION)
 @server.catch_error()
-async def code_action(ls: Server, params: CodeActionParams):
+def code_action(ls: Server, params: CodeActionParams):
     return [{
         'title': 'Run WDL',
         'kind': Server.CMD_RUN_WDL,
@@ -157,21 +150,22 @@ async def code_action(ls: Server, params: CodeActionParams):
         },
     }]
 
+@server.thread()
 @server.command(Server.CMD_RUN_WDL)
 @server.catch_error()
-async def run_wdl(ls: Server, params: List[RunWDLParams]):
+def run_wdl(ls: Server, params: Tuple[RunWDLParams]):
     wdl_uri = params[0].wdl_uri
     wdl_path = urlparse(wdl_uri).path
 
-    diagnostics, wdl = await parse_wdl(ls, wdl_uri)
+    diagnostics, wdl = parse_wdl(ls, wdl_uri)
     if diagnostics:
         return ls.show_message('Unable to submit: WDL contains error(s)', MessageType.Error)
 
-    config = await _get_client_config(ls)
+    config = _get_client_config(ls)
     auth = CromwellAuth.from_no_authentication(config.cromwell.url)
-    workflow = await _request(lambda: cromwell_api.submit(
+    workflow = cromwell_api.submit(
         auth, wdl_path, raise_for_status=True,
-    ))
+    ).json()
     id = workflow['id']
 
     title = 'Workflow {} for {}'.format(id, wdl_path)
@@ -205,22 +199,22 @@ async def run_wdl(ls: Server, params: List[RunWDLParams]):
             message = '{}: {}'.format(title, status)
             ls.show_message(message, message_type)
 
-            diagnostics = await _parse_failures(wdl, wdl_uri, id, auth)
+            diagnostics = _parse_failures(wdl, wdl_uri, id, auth)
             return ls.publish_diagnostics(wdl_uri, diagnostics)
 
-        await sleep(config.cromwell.pollSec)
+        sleep(config.cromwell.pollSec)
 
         if id in cancel_workflows:
-            workflow = await _request(lambda: cromwell_api.abort(
+            workflow = cromwell_api.abort(
                 id, auth, raise_for_status=True,
-            ))
+            ).json()
             cancel_workflows.remove(id)
             continue
 
         try:
-            workflow = await _request(lambda: cromwell_api.status(
+            workflow = cromwell_api.status(
                 id, auth, raise_for_status=True,
-            ))
+            ).json()
         except HTTPError as e:
             ls.show_message_log(str(e), MessageType.Error)
 
@@ -230,17 +224,16 @@ def _progress(ls: Server, action: str, params):
     ls.send_notification('window/progress/' + action, params)
 
 @server.feature('window/progress/cancel')
-@server.catch_error()
-async def abort_workflow(ls: Server, params):
+def abort_workflow(ls: Server, params):
     cancel_workflows.add(params.id)
 
-async def _parse_failures(wdl: WDL.Document, wdl_uri: str, id: str, auth: CromwellAuth):
-    workflow = await _request(lambda: cromwell_api.metadata(
+def _parse_failures(wdl: WDL.Document, wdl_uri: str, id: str, auth: CromwellAuth):
+    workflow = cromwell_api.metadata(
         id, auth,
         includeKey=['status', 'executionStatus', 'failures', 'stderr'],
         expandSubWorkflows=True,
         raise_for_status=True,
-    ))
+    ).json()
     if workflow['status'] != 'Failed':
         return
 
@@ -255,7 +248,7 @@ async def _parse_failures(wdl: WDL.Document, wdl_uri: str, id: str, auth: Cromwe
                     pos = _find_call(wdl.workflow.elements, wdl.workflow.name, call)
                     failures = _collect_failures(attempt['failures'], [])
 
-                    stderr = await _download(attempt['stderr'])
+                    stderr = _download(attempt['stderr'])
                     if stderr is not None:
                         failures.append(stderr)
 
@@ -293,6 +286,5 @@ def _find_call(elements: WorkflowElements, wf_name: str, call_name: str):
     return found
 
 @server.catch_error(log=True)
-async def _download(url: str):
-    raw = await _async(lambda: download(url))
-    return str(raw, 'utf-8')
+def _download(url: str):
+    return str(download(url), 'utf-8')
