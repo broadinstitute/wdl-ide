@@ -90,17 +90,16 @@ async def _parse_wdl(uri: str):
         return [], wdl
 
     except WDL.Error.SyntaxError as e:
-        return [_diagnostic(*_match_err_and_pos(e))], None
+        return [_diagnostic_err(e)], None
 
     except WDL.Error.ValidationError as e:
-        return [_validation_diagnostic(e)], None
+        return [_diagnostic_err(e)], None
 
     except WDL.Error.MultipleValidationErrors as errs:
-        return [_validation_diagnostic(e) for e in errs.exceptions], None
+        return [_diagnostic_err(e) for e in errs.exceptions], None
 
     except WDL.Error.ImportError as e:
-        msg = '{}: {}'.format(_match_err(e), e.__cause__.strerror)
-        return [_diagnostic(msg)], None
+        return [_diagnostic_err(e)], None
 
 def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxsize):
     if end_line is None:
@@ -113,18 +112,10 @@ def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxs
         msg,
     )
 
-def _diagnostic_pos(msg: str, pos: WDL.SourcePosition):
-    return _diagnostic(msg, pos.line, pos.column, pos.end_line, pos.end_column)
-
-def _validation_diagnostic(e: WDL.Error.ValidationError):
-    return _diagnostic_pos(_match_err(e), e.pos)
-
-def _match_err(e: Exception):
-    return re.match("^\(.*\) (.*)", str(e)).group(1)
-
-def _match_err_and_pos(e: Exception):
-    match = re.match("^\(.*\) (.*) at line (\d+) col (\d+)", str(e))
-    return match.group(1), int(match.group(2)), int(match.group(3))
+def _diagnostic_err(e: Exception):
+    cause = ': {}'.format(e.__cause__.strerror) if e.__cause__ else ''
+    msg = str(e) + cause
+    return _diagnostic(msg, e.pos.line, e.pos.column, e.pos.end_line, e.pos.end_column)
 
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
