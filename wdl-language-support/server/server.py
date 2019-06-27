@@ -89,16 +89,10 @@ async def _parse_wdl(uri: str):
         wdl = await _async(lambda: WDL.load(uri))
         return [], wdl
 
-    except WDL.Error.SyntaxError as e:
-        return [_diagnostic_err(e)], None
-
-    except WDL.Error.ValidationError as e:
-        return [_diagnostic_err(e)], None
-
     except WDL.Error.MultipleValidationErrors as errs:
         return [_diagnostic_err(e) for e in errs.exceptions], None
 
-    except WDL.Error.ImportError as e:
+    except WDLError as e:
         return [_diagnostic_err(e)], None
 
 def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxsize):
@@ -112,7 +106,9 @@ def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxs
         msg,
     )
 
-def _diagnostic_err(e: Exception):
+WDLError = (WDL.Error.ImportError, WDL.Error.SyntaxError, WDL.Error.ValidationError)
+
+def _diagnostic_err(e: WDLError):
     cause = ': {}'.format(e.__cause__.strerror) if e.__cause__ else ''
     msg = str(e) + cause
     return _diagnostic(msg, e.pos.line, e.pos.column, e.pos.end_line, e.pos.end_column)
