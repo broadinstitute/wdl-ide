@@ -95,6 +95,8 @@ async def _parse_wdl(uri: str):
     except WDLError as e:
         return [_diagnostic_err(e)], None
 
+WDLError = (WDL.Error.ImportError, WDL.Error.SyntaxError, WDL.Error.ValidationError)
+
 def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxsize):
     if end_line is None:
         end_line = line
@@ -106,12 +108,13 @@ def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxs
         msg,
     )
 
-WDLError = (WDL.Error.ImportError, WDL.Error.SyntaxError, WDL.Error.ValidationError)
+def _diagnostic_pos(msg: str, pos: WDL.SourcePosition):
+    return _diagnostic(msg, pos.line, pos.column, pos.end_line, pos.end_column)
 
 def _diagnostic_err(e: WDLError):
     cause = ': {}'.format(e.__cause__.strerror) if e.__cause__ else ''
     msg = str(e) + cause
-    return _diagnostic(msg, e.pos.line, e.pos.column, e.pos.end_line, e.pos.end_column)
+    return _diagnostic_pos(msg, e.pos)
 
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
