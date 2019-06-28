@@ -11,7 +11,6 @@ from pygls.features import (
     CODE_ACTION,
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_CHANGE,
-    TEXT_DOCUMENT_DID_CLOSE,
 )
 from pygls.server import LanguageServer
 from pygls.types import (
@@ -21,7 +20,6 @@ from pygls.types import (
     Diagnostic,
     DidOpenTextDocumentParams,
     DidChangeTextDocumentParams,
-    DidCloseTextDocumentParams,
     MessageType,
     Position,
     Range,
@@ -45,7 +43,6 @@ class Server(LanguageServer):
 
     def __init__(self):
         super().__init__()
-        self.docs: Dict[str, List[str]] = dict()
         self.aborting_workflows: Set[str] = set()
 
     def catch_error(self, log = False):
@@ -101,8 +98,8 @@ def parse_wdl(ls: Server, uri: str):
 
 def _parse_wdl(ls: Server, uri: str):
     try:
-        text = linesep.join(ls.docs[uri])
-        wdl = WDL.load(uri, source_text=text)
+        doc = ls.workspace.get_document(uri)
+        wdl = WDL.load(uri, source_text=doc.source)
         return [], wdl
 
     except WDL.Error.MultipleValidationErrors as errs:
@@ -132,41 +129,15 @@ def _diagnostic_err(e: WDLError):
     msg = str(e) + cause
     return _diagnostic_pos(msg, e.pos)
 
-@server.thread()
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
 @server.catch_error()
 def did_open(ls: Server, params: DidOpenTextDocumentParams):
-    """Text document did open notification."""
-    doc = params.textDocument
-    ls.docs[doc.uri] = doc.text.splitlines()
-    ls.show_message_log('Opened {}'.format(doc.uri), MessageType.Info)
-    parse_wdl(ls, doc.uri)
+    parse_wdl(ls, params.textDocument.uri)
 
 @server.feature(TEXT_DOCUMENT_DID_CHANGE)
 @server.catch_error()
 def did_change(ls: Server, params: DidChangeTextDocumentParams):
-    """Text document did change notification."""
-    uri = params.textDocument.uri
-    text = ls.docs[uri]
-    for change in params.contentChanges:
-        r = change.range
-        if not r:
-            ls.docs[uri] = change.text.splitlines()
-            continue
-        text[r.start.line : r.end.line + 1] = ''.join([
-            text[r.start.line][:r.start.character],
-            change.text,
-            text[r.end.line][r.end.character:],
-        ]).splitlines()
-    parse_wdl(ls, uri)
-
-@server.feature(TEXT_DOCUMENT_DID_CLOSE)
-@server.catch_error()
-def did_close(ls: Server, params: DidCloseTextDocumentParams):
-    """Text document did close notification."""
-    uri = params.textDocument.uri
-    ls.docs[uri] = None
-    ls.show_message_log('Closed {}'.format(uri), MessageType.Info)
+    parse_wdl(ls, params.textDocument.uri)
 
 class RunWDLParams:
     def __init__(self, wdl_uri: str):
