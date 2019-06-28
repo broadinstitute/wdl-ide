@@ -10,7 +10,7 @@ from functools import wraps
 from pygls.features import (
     CODE_ACTION,
     TEXT_DOCUMENT_DID_OPEN,
-    TEXT_DOCUMENT_DID_SAVE,
+    TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_CLOSE,
 )
 from pygls.server import LanguageServer
@@ -20,18 +20,19 @@ from pygls.types import (
     ConfigurationParams,
     Diagnostic,
     DidOpenTextDocumentParams,
-    DidSaveTextDocumentParams,
+    DidChangeTextDocumentParams,
     DidCloseTextDocumentParams,
     MessageType,
     Position,
     Range,
-    TextDocumentItem,
 )
 
+from os import linesep
 import re, sys
 from requests import HTTPError
+from threading import Timer
 from time import sleep
-from typing import Callable, List, Set, Tuple, Union
+from typing import Callable, Dict, List, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import WDL
@@ -44,6 +45,8 @@ class Server(LanguageServer):
 
     def __init__(self):
         super().__init__()
+        self.docs: Dict[str, List[str]] = dict()
+        self.aborting_workflows: Set[str] = set()
 
     def catch_error(self, log = False):
         def decorator(func: Callable):
@@ -67,18 +70,39 @@ def _get_client_config(ls: Server):
     ])).result()
     return config[0]
 
+# https://gist.github.com/walkermatt/2871026
+def debounce(wait: float):
+    """ Decorator that will postpone a functions
+        execution until after wait seconds
+        have elapsed since the last time it was invoked. """
+    def decorator(func: Callable):
+        @wraps(func)
+        def debounced(*args, **kwargs):
+            def call():
+                func(*args, **kwargs)
+            try:
+                debounced.t.cancel()
+            except(AttributeError):
+                pass
+            debounced.t = Timer(wait, call)
+            debounced.t.start()
+        return debounced
+    return decorator
+
+@debounce(1)
 def parse_wdl(ls: Server, uri: str):
-    ls.show_message_log('Validating WDL...')
-
-    diagnostics, wdl = _parse_wdl(uri)
-
-    ls.show_message_log('Validated')
+    ls.show_message_log('Validating ' + uri, MessageType.Info)
+    diagnostics, _ = _parse_wdl(ls, uri)
     ls.publish_diagnostics(uri, diagnostics)
-    return diagnostics, wdl
+    ls.show_message_log(
+        '{} {}'.format('Invalidated' if diagnostics else 'Validated', uri),
+        MessageType.Warning if diagnostics else MessageType.Info
+    )
 
-def _parse_wdl(uri: str):
+def _parse_wdl(ls: Server, uri: str):
     try:
-        wdl = WDL.load(uri)
+        text = linesep.join(ls.docs[uri])
+        wdl = WDL.load(uri, source_text=text)
         return [], wdl
 
     except WDL.Error.MultipleValidationErrors as errs:
@@ -108,23 +132,32 @@ def _diagnostic_err(e: WDLError):
     msg = str(e) + cause
     return _diagnostic_pos(msg, e.pos)
 
-
 @server.thread()
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
 @server.catch_error()
 def did_open(ls: Server, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-    uri = params.textDocument.uri
-    ls.show_message_log('Opened {}'.format(uri))
-    parse_wdl(ls, uri)
+    doc = params.textDocument
+    ls.docs[doc.uri] = doc.text.splitlines()
+    ls.show_message_log('Opened {}'.format(doc.uri), MessageType.Info)
+    parse_wdl(ls, doc.uri)
 
-@server.thread()
-@server.feature(TEXT_DOCUMENT_DID_SAVE)
+@server.feature(TEXT_DOCUMENT_DID_CHANGE)
 @server.catch_error()
-def did_save(ls: Server, params: DidSaveTextDocumentParams):
+def did_change(ls: Server, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
     uri = params.textDocument.uri
-    ls.show_message_log('Saved {}'.format(uri))
+    text = ls.docs[uri]
+    for change in params.contentChanges:
+        r = change.range
+        if not r:
+            ls.docs[uri] = change.text.splitlines()
+            continue
+        text[r.start.line : r.end.line + 1] = ''.join([
+            text[r.start.line][:r.start.character],
+            change.text,
+            text[r.end.line][r.end.character:],
+        ]).splitlines()
     parse_wdl(ls, uri)
 
 @server.feature(TEXT_DOCUMENT_DID_CLOSE)
@@ -132,7 +165,8 @@ def did_save(ls: Server, params: DidSaveTextDocumentParams):
 def did_close(ls: Server, params: DidCloseTextDocumentParams):
     """Text document did close notification."""
     uri = params.textDocument.uri
-    ls.show_message_log('Closed {}'.format(uri))
+    ls.docs[uri] = None
+    ls.show_message_log('Closed {}'.format(uri), MessageType.Info)
 
 class RunWDLParams:
     def __init__(self, wdl_uri: str):
@@ -157,8 +191,8 @@ def run_wdl(ls: Server, params: Tuple[RunWDLParams]):
     wdl_uri = params[0].wdl_uri
     wdl_path = urlparse(wdl_uri).path
 
-    diagnostics, wdl = parse_wdl(ls, wdl_uri)
-    if diagnostics:
+    _, wdl = _parse_wdl(ls, wdl_uri)
+    if not wdl:
         return ls.show_message('Unable to submit: WDL contains error(s)', MessageType.Error)
 
     config = _get_client_config(ls)
@@ -204,11 +238,11 @@ def run_wdl(ls: Server, params: Tuple[RunWDLParams]):
 
         sleep(config.cromwell.pollSec)
 
-        if id in cancel_workflows:
+        if id in ls.aborting_workflows:
             workflow = cromwell_api.abort(
                 id, auth, raise_for_status=True,
             ).json()
-            cancel_workflows.remove(id)
+            ls.aborting_workflows.remove(id)
             continue
 
         try:
@@ -218,14 +252,12 @@ def run_wdl(ls: Server, params: Tuple[RunWDLParams]):
         except HTTPError as e:
             ls.show_message_log(str(e), MessageType.Error)
 
-cancel_workflows: Set[str] = set()
-
 def _progress(ls: Server, action: str, params):
     ls.send_notification('window/progress/' + action, params)
 
 @server.feature('window/progress/cancel')
 def abort_workflow(ls: Server, params):
-    cancel_workflows.add(params.id)
+    ls.aborting_workflows.add(params.id)
 
 def _parse_failures(wdl: WDL.Document, wdl_uri: str, id: str, auth: CromwellAuth):
     workflow = cromwell_api.metadata(
