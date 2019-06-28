@@ -11,6 +11,7 @@ from pygls.features import (
     CODE_ACTION,
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_CHANGE,
+    WORKSPACE_DID_CHANGE_WATCHED_FILES,
 )
 from pygls.server import LanguageServer
 from pygls.types import (
@@ -20,12 +21,15 @@ from pygls.types import (
     Diagnostic,
     DidOpenTextDocumentParams,
     DidChangeTextDocumentParams,
+    DidChangeWatchedFiles,
+    FileChangeType,
     MessageType,
     Position,
     Range,
 )
 
 from os import linesep
+from pathlib import Path
 import re, sys
 from requests import HTTPError
 from threading import Timer
@@ -43,6 +47,7 @@ class Server(LanguageServer):
 
     def __init__(self):
         super().__init__()
+        self.wdl_paths: Dict[str, Set[str]] = dict()
         self.aborting_workflows: Set[str] = set()
 
     def catch_error(self, log = False):
@@ -89,17 +94,18 @@ def debounce(wait: float):
 @debounce(1)
 def parse_wdl(ls: Server, uri: str):
     ls.show_message_log('Validating ' + uri, MessageType.Info)
-    diagnostics, _ = _parse_wdl(ls, uri)
+    diagnostics, wdl = _parse_wdl(ls, uri)
     ls.publish_diagnostics(uri, diagnostics)
     ls.show_message_log(
-        '{} {}'.format('Invalidated' if diagnostics else 'Validated', uri),
-        MessageType.Warning if diagnostics else MessageType.Info
+        '{} {}'.format('Valid' if wdl else 'Invalid', uri),
+        MessageType.Info if wdl else MessageType.Warning
     )
 
 def _parse_wdl(ls: Server, uri: str):
     try:
-        doc = ls.workspace.get_document(uri)
-        wdl = WDL.load(uri, source_text=doc.source)
+        paths = _get_wdl_paths(ls, uri)
+        source = ls.workspace.get_document(uri).source
+        wdl = WDL.load(uri, source_text=source, path=paths)
         return [], wdl
 
     except WDL.Error.MultipleValidationErrors as errs:
@@ -107,6 +113,29 @@ def _parse_wdl(ls: Server, uri: str):
 
     except WDLError as e:
         return [_diagnostic_err(e)], None
+
+    except Exception as e:
+        ls.show_message_log(str(e), MessageType.Error)
+        return [], None
+
+def _get_wdl_paths(ls: Server, wdl_uri: str, reuse_paths = True) -> List[str]:
+    ws = ls.workspace
+    if ws.folders:
+        ws_uris = [f for f in ws.folders if wdl_uri.startswith(f)]
+    else:
+        ws_uris = [ws.root_uri]
+    wdl_paths: Set[str] = set()
+    for ws_uri in ws_uris:
+        if reuse_paths and (ws_uri in ls.wdl_paths):
+            ws_paths = ls.wdl_paths[ws_uri]
+        else:
+            ws_paths: Set[str] = set()
+            ws_root = Path(urlparse(ws_uri).path)
+            for p in ws_root.rglob('*.wdl'):
+                ws_paths.add(str(p.parent))
+            ls.wdl_paths[ws_uri] = ws_paths
+        wdl_paths.update(ws_paths)
+    return list(wdl_paths)
 
 WDLError = (WDL.Error.ImportError, WDL.Error.SyntaxError, WDL.Error.ValidationError)
 
@@ -138,6 +167,14 @@ def did_open(ls: Server, params: DidOpenTextDocumentParams):
 @server.catch_error()
 def did_change(ls: Server, params: DidChangeTextDocumentParams):
     parse_wdl(ls, params.textDocument.uri)
+
+@server.thread()
+@server.feature(WORKSPACE_DID_CHANGE_WATCHED_FILES)
+@server.catch_error()
+def did_change_watched_files(ls: Server, params: DidChangeWatchedFiles):
+    for change in params.changes:
+        if change.type in [FileChangeType.Created, FileChangeType.Deleted]:
+            _get_wdl_paths(ls, change.uri, reuse_paths=False)
 
 class RunWDLParams:
     def __init__(self, wdl_uri: str):

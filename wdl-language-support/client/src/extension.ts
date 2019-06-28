@@ -29,15 +29,14 @@ let client: LanguageClient;
 
 function getClientOptions(): LanguageClientOptions {
   return {
-    // Register the server for plain text documents
+    // Register the server for WDL documents
     documentSelector: [
       { scheme: "file", language },
-      { scheme: "untitled", language },
     ],
     outputChannelName: "WDL Language Server",
     synchronize: {
-      // Notify the server about file changes to '.clientrc files contain in the workspace
-      fileEvents: workspace.createFileSystemWatcher("**/.clientrc"),
+      // Notify the server about changes to .wdl files contained in the workspace
+      fileEvents: workspace.createFileSystemWatcher("**/*.wdl"),
     },
   };
 }
