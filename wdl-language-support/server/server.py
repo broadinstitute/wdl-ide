@@ -39,6 +39,8 @@ from urllib.parse import urlparse
 
 import WDL
 
+PARSE_DELAY_SEC = 0.5 # delay parsing of WDL until no more keystrokes are sent
+
 class Server(LanguageServer):
     SERVER_NAME = 'wdl'
     CONFIG_SECTION = SERVER_NAME
@@ -73,7 +75,7 @@ def _get_client_config(ls: Server):
     return config[0]
 
 # https://gist.github.com/walkermatt/2871026
-def debounce(wait: float):
+def debounce(delay_sec: float):
     """ Decorator that will postpone a functions
         execution until after wait seconds
         have elapsed since the last time it was invoked. """
@@ -86,12 +88,12 @@ def debounce(wait: float):
                 debounced.t.cancel()
             except(AttributeError):
                 pass
-            debounced.t = Timer(wait, call)
+            debounced.t = Timer(delay_sec, call)
             debounced.t.start()
         return debounced
     return decorator
 
-@debounce(1)
+@debounce(PARSE_DELAY_SEC)
 def parse_wdl(ls: Server, uri: str):
     ls.show_message_log('Validating ' + uri, MessageType.Info)
     diagnostics, wdl = _parse_wdl(ls, uri)
