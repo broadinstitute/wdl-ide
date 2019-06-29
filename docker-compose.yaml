@@ -1,7 +1,7 @@
 version: '3'
 services:
   cromwell:
-    image: broadinstitute/cromwell:${CROMWELL_VERSION:-41}
+    image: broadinstitute/cromwell:${CROMWELL_VERSION:-prod}
     command: server
     ports:
     - 8000:8000
