@@ -21,4 +21,7 @@ setup(
         'miniwdl >= 0.2.1',
         'pygls >= 0.8.0',
     ],
+    entry_points={
+        'console_scripts': ['wdl-lsp = wdl_lsp.__main__:main'],
+    },
 )
