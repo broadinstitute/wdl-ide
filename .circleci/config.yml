@@ -41,7 +41,7 @@ jobs:
         command: |
           set -e
 
-          [ "${CIRCLE_BRANCH}" != "master" ] && exit
+          if [ "${CIRCLE_BRANCH}" != "master" ]; then exit
 
           pip3 install --user twine
           twine upload --repository-url https://test.pypi.org/legacy/ dist/*
