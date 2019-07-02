@@ -43,8 +43,5 @@ jobs:
         working_directory: server
         command: |
           set -e
-
-          [ "${CIRCLE_BRANCH}" != "master" ] && exit
-
           pip3 install --user twine
           python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
