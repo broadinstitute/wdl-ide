@@ -3,20 +3,27 @@ version: 2.1
 workflows:
   build_and_deploy:
     jobs:
+    - check_release:
+      tags:
+        only: /^\d+.\d+.\d+$/
+
     - build_server
+
     - deploy_server:
         requires:
         - build_server
+        - check_release
         filters:
-          tags:
-            only: /^\d+.\d+.\d+$/
           branches:
             only: /^master$/
 
+server_defaults: &server_defaults
+  docker:
+  - image: circleci/python
+
 jobs:
   build_server:
-    docker:
-    - image: circleci/python
+    <<: *server_defaults
     steps:
     - checkout
     - run:
@@ -24,9 +31,13 @@ jobs:
         command: |
           python3 setup.py sdist bdist_wheel
 
+  check_release:
+    <<: *server_defaults
+    steps:
+    - run: true
+
   deploy_server:
-    docker:
-    - image: circleci/python
+    <<: *server_defaults
     steps:
     - run:
         working_directory: server
