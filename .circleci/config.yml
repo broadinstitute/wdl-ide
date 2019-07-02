@@ -30,7 +30,7 @@ jobs:
           echo -e "username = ${PYPI_USERNAME}" >> ~/.pypirc
           echo -e "password = ${PYPI_PASSWORD}" >> ~/.pypirc
     - run:
-        workspace_directory: server
+        working_directory: server
         command: |
           set -e
 
