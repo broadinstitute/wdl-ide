@@ -30,11 +30,6 @@ jobs:
         command: |
           python3 setup.py sdist bdist_wheel
 
-  check_release:
-    <<: *server_defaults
-    steps:
-    - run: 'true'
-
   deploy_server:
     <<: *server_defaults
     steps:
