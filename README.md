@@ -77,10 +77,3 @@ The first time you run the Docker compose command, it will take ~5 minutes to co
 
 When you no longer see the log messages, the IDE is running and you can navigate
 to it in a browser at this address: [localhost:3000](http://localhost:3000).
-
-## License
-
-This project is **not yet licensed** for external use.
-
-However, we anticipate a BSD-type license could be obtained
-in the near future.
