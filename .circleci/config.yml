@@ -15,7 +15,7 @@ release_only: &release_only
 workflows:
   build_and_deploy:
     jobs:
-    - build_server
+    - build_server:
         <<: *all_tags
     - deploy_server:
         requires:
