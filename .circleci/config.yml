@@ -25,11 +25,6 @@ jobs:
     steps:
     - checkout
     - run:
-        command: |
-          echo -e "[pypi]" >> ~/.pypirc
-          echo -e "username = ${PYPI_USERNAME}" >> ~/.pypirc
-          echo -e "password = ${PYPI_PASSWORD}" >> ~/.pypirc
-    - run:
         working_directory: server
         command: |
           set -e
@@ -37,4 +32,4 @@ jobs:
           python3 setup.py sdist bdist_wheel
 
           pip3 install --user twine
-          python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+          python3 -m twine upload
