@@ -4,8 +4,9 @@ workflows:
   build_and_deploy:
     jobs:
     - check_release:
-      tags:
-        only: /^\d+.\d+.\d+$/
+        filters:
+          tags:
+            only: /^\d+.\d+.\d+$/
 
     - build_server
 
