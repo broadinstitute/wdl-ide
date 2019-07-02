@@ -32,4 +32,4 @@ jobs:
           python3 setup.py sdist bdist_wheel
 
           pip3 install --user twine
-          python3 -m twine upload
+          python3 -m twine upload dist/*
