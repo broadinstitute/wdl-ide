@@ -41,4 +41,4 @@ jobs:
           [ "${CIRCLE_BRANCH}" != "master" ] && exit
 
           pip3 install --user twine
-          twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+          python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
