@@ -4,7 +4,7 @@ release_filter: &release_filter
   filters:
     tags:
       only: /^\d+.\d+.\d+$/
-    branch:
+    branches:
       ignore: /.*/
 
 workflows:
