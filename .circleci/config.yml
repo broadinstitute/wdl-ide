@@ -35,7 +35,7 @@ jobs:
   check_release:
     <<: *server_defaults
     steps:
-    - run: true
+    - run: 'true'
 
   deploy_server:
     <<: *server_defaults
