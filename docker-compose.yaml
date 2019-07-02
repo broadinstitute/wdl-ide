@@ -13,6 +13,7 @@ services:
     - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-default-project}
     - GOOGLE_EXECUTIONS_BUCKET
     - DOCKER_HOST=tcp://docker:2375
+    - MYSQL_HOST=db
     volumes:
     - ./cromwell/cromwell.conf:/etc/cromwell/cromwell.conf:ro
     - ${GOOGLE_APPLICATION_CREDENTIALS:-google-nocred}:/root/key.json:ro
