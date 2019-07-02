@@ -1,6 +1,11 @@
 version: 2.1
 
-release_filter: &release_filter
+all_tags: &all_tags
+  filters:
+    tags:
+      only: /.*/
+
+release_only: &release_only
   filters:
     tags:
       only: /^\d+.\d+.\d+$/
@@ -11,10 +16,11 @@ workflows:
   build_and_deploy:
     jobs:
     - build_server
+        <<: *all_tags
     - deploy_server:
         requires:
         - build_server
-        <<: *release_filter
+        <<: *release_only
 
 server_defaults: &server_defaults
   docker:
