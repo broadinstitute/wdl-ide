@@ -3,6 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='wdl-lsp',
     description='Language Server Protocol (LSP) implementation for Workflow Definition Language (WDL)',
+    url='https://github.com/broadinstitute/wdl-ide',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
