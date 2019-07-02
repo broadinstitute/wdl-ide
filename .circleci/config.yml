@@ -1,0 +1,36 @@
+version: 2.1
+
+workflows:
+  build_and_deploy:
+    jobs:
+    - build_server
+    - deploy_server:
+        requires:
+        - build_server
+        filters:
+          tags:
+            only: /^\d+.\d+.\d+$/
+          branches:
+            only: /^master$/
+
+jobs:
+  build_server:
+    docker:
+    - image: circleci/python
+    steps:
+    - checkout
+    - run:
+        working_directory: server
+        command: |
+          python3 setup.py sdist bdist_wheel
+
+  deploy_server:
+    docker:
+    - image: circleci/python
+    steps:
+    - run:
+        working_directory: server
+        command: |
+          set -e
+          pip3 install twine
+          twine upload --repository-url https://test.pypi.org/legacy/ dist/*
