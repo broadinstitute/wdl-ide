@@ -18,7 +18,7 @@ setup(
     use_scm_version={"root": "..", "relative_to": __file__},
     install_requires=[
         'cromwell-tools >= 2.2.0',
-        'miniwdl >= 0.2.1',
+        'miniwdl >= 0.2.2',
         'pygls >= 0.8.0',
     ],
     entry_points={

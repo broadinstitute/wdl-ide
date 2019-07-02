@@ -19,6 +19,7 @@ from pygls.types import (
     ConfigurationItem,
     ConfigurationParams,
     Diagnostic,
+    DiagnosticSeverity,
     DidOpenTextDocumentParams,
     DidChangeTextDocumentParams,
     DidChangeWatchedFiles,
@@ -108,7 +109,7 @@ def _parse_wdl(ls: Server, uri: str):
         paths = _get_wdl_paths(ls, uri)
         source = ls.workspace.get_document(uri).source
         wdl = WDL.load(uri, source_text=source, path=paths)
-        return [], wdl
+        return list(_lint_wdl(wdl)), wdl
 
     except WDL.Error.MultipleValidationErrors as errs:
         return [_diagnostic_err(e) for e in errs.exceptions], None
@@ -119,6 +120,11 @@ def _parse_wdl(ls: Server, uri: str):
     except Exception as e:
         ls.show_message_log(str(e), MessageType.Error)
         return [], None
+
+def _lint_wdl(doc: WDL.Document):
+    warnings = WDL.Lint.collect(WDL.Lint.lint(doc, descend_imports=False))
+    for pos, _, msg in warnings:
+        yield _diagnostic_pos(msg, pos, DiagnosticSeverity.Warning)
 
 def _get_wdl_paths(ls: Server, wdl_uri: str, reuse_paths = True) -> List[str]:
     ws = ls.workspace
@@ -141,7 +147,7 @@ def _get_wdl_paths(ls: Server, wdl_uri: str, reuse_paths = True) -> List[str]:
 
 WDLError = (WDL.Error.ImportError, WDL.Error.SyntaxError, WDL.Error.ValidationError)
 
-def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxsize):
+def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxsize, severity = DiagnosticSeverity.Error):
     if end_line is None:
         end_line = line
     return Diagnostic(
@@ -150,10 +156,11 @@ def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxs
             Position(end_line - 1, end_col - 1),
         ),
         msg,
+        severity=severity,
     )
 
-def _diagnostic_pos(msg: str, pos: WDL.SourcePosition):
-    return _diagnostic(msg, pos.line, pos.column, pos.end_line, pos.end_column)
+def _diagnostic_pos(msg: str, pos: WDL.SourcePosition, severity = DiagnosticSeverity.Error):
+    return _diagnostic(msg, pos.line, pos.column, pos.end_line, pos.end_column, severity)
 
 def _diagnostic_err(e: WDLError):
     cause = ': {}'.format(e.__cause__.strerror) if e.__cause__ else ''
