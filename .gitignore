@@ -1,16 +1,24 @@
 *.bak
 *.json
 *.log
+*.pyc
 *.vsix
 *.wdl
 
+!launch.json
 !package.json
+!tasks.json
 !tsconfig.json
 !tslint.json
 
 .DS_Store
 
-!**/.vscode/*.json
-**/.vscode-test/
-**/node_modules/
-**/out/
+*.egg-info/
+.eggs/
+.idea/
+.vscode-test/
+
+build/
+dist/
+node_modules/
+out/

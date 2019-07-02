@@ -31,8 +31,8 @@ Additionally, we provide an Integrated Development Environment (IDE),
 which runs in a web browser and is based on [Theia](https://www.theia-ide.org/).
 
 It bundles WDL extensions for [Visual Studio Code](https://code.visualstudio.com/) -
-[Language Support](wdl-language-support) and
-[Syntax Highlighter](https://marketplace.visualstudio.com/items?itemName=broadinstitute.wdl) -
+[WDL DevTools](client/vscode) and
+[WDL Syntax Highlighter](https://marketplace.visualstudio.com/items?itemName=broadinstitute.wdl) -
 along with a "local" instance of Cromwell.
 
 The bundle consists of [Docker](https://www.docker.com/) containers,

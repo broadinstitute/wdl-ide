@@ -80,13 +80,13 @@ export function activate(context: ExtensionContext) {
   } else {
     // Production - Client is going to run the server (for use within `.vsix` package)
     const cwd = path.join(__dirname, "../");
-    const pythonPath = workspace.getConfiguration("python").get<string>("pythonPath");
+    const pythonPath = workspace.getConfiguration(language).get<string>("pythonPath");
 
     if (!pythonPath) {
-      throw new Error("`python.pythonPath` is not set");
+      throw new Error(`${language}.pythonPath is not set`);
     }
 
-    client = startLangServer(pythonPath, ["-m", "server"], cwd);
+    client = startLangServer(pythonPath, ["server.py"], cwd);
   }
 
   client.registerProposedFeatures();

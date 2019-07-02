@@ -9,6 +9,5 @@
     "**/.theia": true,
     "**/.yarn": true
   },
-  "python.pythonPath": "/usr/bin/python3",
   "wdl.cromwell.url": "http://cromwell:8000"
 }

@@ -1,13 +1,10 @@
-.vscode
 .gitignore
-
-client
-
+package.json
+package-lock.json
 tsconfig.json
 tslint.json
 
+.vscode/
 out/*.map
-
-package.json
-package-lock.json
+src/
 

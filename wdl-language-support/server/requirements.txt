@@ -1,3 +1,0 @@
-cromwell-tools>=2.2.0
-miniwdl
-pygls

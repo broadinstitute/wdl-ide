@@ -1,20 +1,19 @@
-// A launch configuration that compiles the extension and then opens it inside a new window
 {
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Client",
             "type": "extensionHost",
             "request": "launch",
-            "name": "Launch Client",
             "runtimeExecutable": "${execPath}",
             "sourceMaps": true,
             "args": [
-                "--extensionDevelopmentPath=${workspaceRoot}"
+                "--extensionDevelopmentPath=${workspaceFolder}/client/vscode"
             ],
             "outFiles": [
-                "${workspaceRoot}/client/out/**/*.js"
+                "${workspaceFolder}/client/vscode/out/**/*.js"
             ],
-            "preLaunchTask": "json-extension-watch:client",
+            "preLaunchTask": "wdl-extension-watch:client",
             "env": {
                 "VSCODE_DEBUG_MODE": "true"
             }
@@ -23,16 +22,14 @@
             "name": "Launch Server",
             "type": "python",
             "request": "launch",
-            "module": "server",
+            "module": "wdl_lsp",
             "console": "internalConsole",
             "args": [
                 "--tcp"
             ],
             "justMyCode": false,
-            "pythonPath": "${config:python.pythonPath}",
-            "cwd": "${workspaceFolder}",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}/server"
             }
         }
     ],

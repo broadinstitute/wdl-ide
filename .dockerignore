@@ -1,5 +1,13 @@
-**/*.bak
-**/*.vsix
+**
 
-**/.vscode-test
-**/node_modules
+!client/theia/*.json
+!client/theia/*.patch
+
+!client/vscode/*.json
+!client/vscode/*.py
+!client/vscode/src/*.ts
+
+!scripts/*.sh
+
+!server/*.py
+!server/wdl_lsp/*.py

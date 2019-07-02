@@ -19,7 +19,7 @@ RUN apk add --no-cache \
       patch \
       python
 
-ADD theia/package.json theia/plugin-ext.patch ./
+ADD client/theia/package.json client/theia/plugin-ext.patch ./
 
 # build Theia
 
@@ -44,17 +44,17 @@ WORKDIR /vscode/extensions/docker
 
 RUN /tmp/vsce-package.sh
 
-# WDL Language Support plugin
+# WDL DevTools plugin
 
-WORKDIR /tmp/wdl-language-support
+WORKDIR /tmp/wdl-devtools
 
-ADD wdl-language-support/package.json .
+ADD client/vscode/package.json .
 RUN yarn
 
-ADD wdl-language-support/ .
+ADD client/vscode/ .
 RUN /tmp/vsce-package.sh
 
-RUN cp server/requirements.txt ${THEIA_DIR}/
+ADD server/ ${THEIA_DIR}/
 
 ## ----------------------------------
 ## Copy packages into the final image
@@ -64,9 +64,10 @@ FROM base
 COPY --from=build ${THEIA_DIR} .
 
 ENV USER=theia \
-    THEIA_PLUGINS=local-dir:plugins,vscode:extension/broadinstitute.wdl,vscode:extension/PeterJausovec.vscode-docker
+    THEIA_PLUGINS=local-dir:plugins,vscode:extension/broadinstitute.wdl
+    # vscode:extension/PeterJausovec.vscode-docker
 
-ADD theia/settings.json /home/${USER}/.theia/
+ADD client/theia/settings.json /home/${USER}/.theia/
 
 RUN apk add --no-cache \
       docker \
@@ -74,7 +75,8 @@ RUN apk add --no-cache \
       libsecret \
       python3 \
     && \
-    pip3 install -r requirements.txt && \
+    SETUPTOOLS_SCM_PRETEND_VERSION=git python3 setup.py install \
+    && \
     adduser -S ${USER} && \
     mkdir /home/${USER}/workspace && \
     chown -R ${USER} /home/${USER}
