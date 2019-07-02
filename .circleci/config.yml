@@ -1,6 +1,6 @@
 version: 2.1
 
-all_tags: &all_tags
+always_run: &always_run
   filters:
     tags:
       only: /.*/
@@ -18,20 +18,17 @@ workflows:
     - deploy_server:
         <<: *release_only
 
-server_defaults: &server_defaults
-  docker:
-  - image: circleci/python
-
 jobs:
   deploy_server:
-    <<: *server_defaults
+    docker:
+    - image: circleci/python
     steps:
-    - run:
-        working_directory: server
-        command: |
-          set -e
+    - checkout
+    - run: |
+        set -e
 
-          python3 setup.py sdist bdist_wheel
+        cd server
+        python3 setup.py sdist bdist_wheel
 
-          pip3 install --user twine
-          python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+        pip3 install --user twine
+        python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
