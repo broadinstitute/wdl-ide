@@ -32,5 +32,5 @@ jobs:
         working_directory: server
         command: |
           set -e
-          pip3 install -U twine
+          pip3 install --user twine
           twine upload --repository-url https://test.pypi.org/legacy/ dist/*
