@@ -1,5 +1,7 @@
-jobs:
+matrix:
   fast_finish: true
+
+jobs:
   include:
   - stage: Deploy Server
     if: &release_tag branch = master
