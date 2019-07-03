@@ -30,7 +30,8 @@ jobs:
     steps:
     - run:
         command: |
-          echo ${TEST_SECRET}
+          echo TEST_SECRET = "${TEST_SECRET}"
+          echo CIRCLE_JOB = "${CIRCLE_JOB}"
 
   deploy_server:
     docker:
