@@ -1,0 +1,20 @@
+jobs:
+  include:
+  - stage: Deploy Server
+    if: &master-tag branch = master AND tag =~ ^\d+.\d+.\d+$
+    language: python
+    python: 3.6
+    script:
+    - python3 setup.py sdist bdist_wheel
+    - twine upload --skip-existing dist/*
+
+  - stage: Deploy VSCode Client
+    if: *if-master-tag
+    language: node_js
+    node_js: node
+    install: vsce
+    env:
+    - secure: c
+    script:
+    - npm version ${TRAVIS_TAG}
+    - vsce publish publish -p ${VSCE_TOKEN}
