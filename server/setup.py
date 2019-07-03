@@ -2,7 +2,9 @@ from setuptools import find_packages, setup
 
 setup(
     name='wdl-lsp',
+    author='Broad Institute',
     description='Language Server Protocol (LSP) implementation for Workflow Definition Language (WDL)',
+    license='BSD 3-clause "New" or "Revised" License',
     url='https://github.com/broadinstitute/wdl-ide',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -12,11 +14,18 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
     ],
-    author='Broad Institute',
-    license='BSD 3-clause "New" or "Revised" License',
-    packages=find_packages(exclude=['tests']),
-    setup_requires=['setuptools_scm'],
-    use_scm_version={"root": "..", "relative_to": __file__},
+    packages=find_packages(
+        exclude=[
+            'tests',
+        ],
+    ),
+    setup_requires=[
+        'setuptools_scm',
+    ],
+    use_scm_version={
+        'root': '..',
+        'relative_to': __file__,
+    },
     install_requires=[
         'cromwell-tools >= 2.2.0',
         'miniwdl >= 0.2.2',
