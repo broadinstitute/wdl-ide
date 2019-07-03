@@ -30,8 +30,6 @@ jobs:
     - checkout
     - run:
         working_directory: server
-        environment:
-          SETUPTOOLS_SCM_PRETEND_VERSION: ${CIRCLE_TAG}
         command: |
           set -e
 
