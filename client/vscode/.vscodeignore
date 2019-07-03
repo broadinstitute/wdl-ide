@@ -1,10 +1,5 @@
-.gitignore
-package.json
-package-lock.json
-tsconfig.json
-tslint.json
+**
 
-.vscode/
-out/*.map
-src/
-
+!node_modules/**
+!out/*.js
+!package.json

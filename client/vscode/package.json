@@ -57,7 +57,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "postinstall": "vscode-install",
-    "vscode:prepublish": "yarn compile"
+    "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
     "@types/node": "^8.9.4",
