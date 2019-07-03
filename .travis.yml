@@ -4,8 +4,10 @@ jobs:
     if: &release_tag branch = master
     language: python
     python: 3.6
+    before_script: cd server
+    install:
+    - pip3 install twine
     script:
-    - cd server
     - python3 setup.py sdist bdist_wheel
     - twine upload --skip-existing dist/*
 
@@ -13,9 +15,9 @@ jobs:
     if: *release_tag
     language: node_js
     node_js: node
+    before_script: cd client/vscode
     install:
     - npm i -g vsce
     script:
-    - cd client/vscode
     - npm version ${TRAVIS_TAG}
     - vsce publish publish -p ${VSCE_TOKEN}
