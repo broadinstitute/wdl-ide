@@ -1,7 +1,7 @@
 jobs:
   include:
   - stage: Deploy Server
-    if: &master-tag branch = master AND tag =~ ^\d+.\d+.\d+$
+    if: &master_tag branch = master AND tag =~ ^\d+.\d+.\d+$
     language: python
     python: 3.6
     script:
@@ -9,12 +9,11 @@ jobs:
     - twine upload --skip-existing dist/*
 
   - stage: Deploy VSCode Client
-    if: *if-master-tag
+    if: *master_tag
     language: node_js
     node_js: node
-    install: vsce
-    env:
-    - secure: c
+    install:
+    - npm i -g vsce
     script:
     - npm version ${TRAVIS_TAG}
     - vsce publish publish -p ${VSCE_TOKEN}
