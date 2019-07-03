@@ -4,7 +4,7 @@ jobs:
     if: &release_tag tag =~ /^\d+.\d+.\d+$/
     language: python
     python: 3.6
-    install:
+    script:
     - cd server
     - python3 setup.py sdist bdist_wheel
     - pip3 install twine
