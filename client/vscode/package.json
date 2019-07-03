@@ -1,6 +1,6 @@
 {
   "name": "wdl-devtools",
-  "displayName": "WDL Development Tools",
+  "displayName": "WDL DevTools",
   "description": "Advanced development tools for Workflow Description Language",
   "publisher": "broadinstitute",
   "repository": "https://github.com/broadinstitute/wdl-ide/client/vscode",
