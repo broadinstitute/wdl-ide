@@ -57,7 +57,6 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "postinstall": "vscode-install",
-    "vsce:publish": "vsce publish -p",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
