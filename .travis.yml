@@ -20,4 +20,4 @@ jobs:
     - npm i
     script:
     - npm version ${TRAVIS_TAG}
-    - vsce publish -p ${VSCE_TOKEN}
+    - ./node_modules/.bin/vsce publish -p ${VSCE_TOKEN}
