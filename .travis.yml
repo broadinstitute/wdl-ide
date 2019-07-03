@@ -1,7 +1,7 @@
 jobs:
   include:
   - stage: Deploy Server
-    if: (branch = master) AND (tag =~ /^\d+.\d+.\d+$/)
+    if: &release_tag branch = master AND tag IS present
     language: python
     python: 3.6
     script:
@@ -9,7 +9,7 @@ jobs:
     - twine upload --skip-existing dist/*
 
   - stage: Deploy VSCode Client
-    if: (branch = master) AND (tag =~ /^\d+.\d+.\d+$/)
+    if: *release_tag
     language: node_js
     node_js: node
     install:
