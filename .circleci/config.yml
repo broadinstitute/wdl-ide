@@ -15,6 +15,7 @@ release_only: &release_only
 workflows:
   deploy:
     jobs:
+    - test_secret
     - deploy_server:
         <<: *release_only
     - deploy_client_vscode:
@@ -23,6 +24,14 @@ workflows:
         - deploy_server
 
 jobs:
+  test_secret:
+    docker:
+    - image: circleci/python
+    steps:
+    - run:
+        command: |
+          echo ${TEST_SECRET}
+
   deploy_server:
     docker:
     - image: circleci/python
