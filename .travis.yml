@@ -1,7 +1,7 @@
 jobs:
   include:
   - stage: Deploy Server
-    if: &release_tag branch = master AND tag IS present
+    if: &release_tag branch = master
     language: python
     python: 3.6
     script:
