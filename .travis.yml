@@ -1,7 +1,12 @@
+stages:
+- name: deploy-server
+  if: &release_tag branch = master
+- name: deploy-vscode-client
+  if: *release_tag
+
 jobs:
   include:
-  - stage: Deploy Server
-    if: &release_tag branch = master
+  - stage: deploy-server
     language: python
     python: 3.6
     before_script: cd server
@@ -11,8 +16,7 @@ jobs:
     - python3 setup.py sdist bdist_wheel
     - twine upload --skip-existing dist/*
 
-  - stage: Deploy VSCode Client
-    if: *release_tag
+  - stage: deploy-vscode-client
     language: node_js
     node_js: node
     before_script: cd client/vscode
