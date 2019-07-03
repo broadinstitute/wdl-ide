@@ -1,7 +1,7 @@
 jobs:
   include:
   - stage: Deploy Server
-    # if: &release_tag branch = master
+    if: &release_tag tag =~ /^\d+.\d+.\d+$/
     language: python
     python: 3.6
     before_script: cd server
@@ -14,7 +14,7 @@ jobs:
     - twine upload --skip-existing dist/*
 
   - stage: Deploy VSCode Client
-    # if: *release_tag
+    if: *release_tag
     language: node_js
     node_js: node
     before_script: cd client/vscode
