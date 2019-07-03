@@ -49,7 +49,6 @@ jobs:
           set -e
 
           npm i
-          npm i -g vsce
 
           npm version ${CIRCLE_TAG}
-          vsce publish -p ${VSCE_TOKEN}
+          ./node_modules/.bin/vsce publish -p ${VSCE_TOKEN}
