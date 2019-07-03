@@ -52,6 +52,7 @@ class Server(LanguageServer):
         super().__init__()
         self.wdl_paths: Dict[str, Set[str]] = dict()
         self.aborting_workflows: Set[str] = set()
+        self.linter_available: bool = None
 
     def catch_error(self, log = False):
         def decorator(func: Callable):
@@ -109,7 +110,7 @@ def _parse_wdl(ls: Server, uri: str):
         paths = _get_wdl_paths(ls, uri)
         source = ls.workspace.get_document(uri).source
         wdl = WDL.load(uri, source_text=source, path=paths)
-        return list(_lint_wdl(wdl)), wdl
+        return list(_lint_wdl(ls, wdl)), wdl
 
     except WDL.Error.MultipleValidationErrors as errs:
         return [_diagnostic_err(e) for e in errs.exceptions], None
@@ -121,10 +122,23 @@ def _parse_wdl(ls: Server, uri: str):
         ls.show_message_log(str(e), MessageType.Error)
         return [], None
 
-def _lint_wdl(doc: WDL.Document):
+def _lint_wdl(ls: Server, doc: WDL.Document):
     warnings = WDL.Lint.collect(WDL.Lint.lint(doc, descend_imports=False))
+    _check_linter(ls)
     for pos, _, msg in warnings:
         yield _diagnostic_pos(msg, pos, DiagnosticSeverity.Warning)
+
+def _check_linter(ls: Server):
+    if ls.linter_available is not None:
+        return
+
+    ls.linter_available = WDL.Lint._shellcheck_available == True
+    if not ls.linter_available:
+        ls.show_message('''
+            WDL task command linter is not available.
+            Please install ShellCheck to enable it:
+            https://github.com/koalaman/shellcheck#installing
+        ''', MessageType.Warning)
 
 def _get_wdl_paths(ls: Server, wdl_uri: str, reuse_paths = True) -> List[str]:
     ws = ls.workspace
