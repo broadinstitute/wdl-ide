@@ -17,7 +17,7 @@ jobs:
     node_js: node
     before_script: cd client/vscode
     install:
-    - npm i -g vsce
+    - npm i
     script:
     - npm version ${TRAVIS_TAG}
-    - vsce publish -p ${VSCE_TOKEN}
+    - npm run vsce publish -p ${VSCE_TOKEN}
