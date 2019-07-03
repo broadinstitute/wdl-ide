@@ -5,6 +5,7 @@ jobs:
     language: python
     python: 3.6
     script:
+    - cd server
     - python3 setup.py sdist bdist_wheel
     - twine upload --skip-existing dist/*
 
@@ -15,5 +16,6 @@ jobs:
     install:
     - npm i -g vsce
     script:
+    - cd client/vscode
     - npm version ${TRAVIS_TAG}
     - vsce publish publish -p ${VSCE_TOKEN}
