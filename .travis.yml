@@ -1,7 +1,7 @@
 jobs:
   include:
   - stage: Deploy Server
-    if: &master_tag branch = master AND tag =~ ^\d+.\d+.\d+$
+    if: &master_tag branch = master AND tag =~ /^\d+.\d+.\d+$/
     language: python
     python: 3.6
     script:
