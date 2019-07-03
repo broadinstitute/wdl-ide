@@ -17,6 +17,10 @@ workflows:
     jobs:
     - deploy_server:
         <<: *release_only
+    - deploy_client_vscode:
+        <<: *release_only
+        requires:
+        - deploy_server
 
 jobs:
   deploy_server:
@@ -33,3 +37,19 @@ jobs:
 
           pip3 install --user twine
           python3 -m twine upload dist/*
+
+  deploy_client_vscode:
+    docker:
+    - image: circleci/node
+    steps:
+    - checkout
+    - run:
+        working_directory: client/vscode
+        command: |
+          set -e
+
+          npm i
+          npm i -g vsce
+
+          npm version ${CIRCLE_TAG}
+          vsce publish -p ${VSCE_TOKEN}
