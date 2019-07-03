@@ -2,7 +2,7 @@
   "name": "wdl-devtools",
   "displayName": "WDL Development Tools",
   "description": "Advanced development tools for Workflow Description Language",
-  "publisher": "broadinstitute",
+  "publisher": "broad-wintergreen",
   "repository": "https://github.com/broadinstitute/wdl-ide/client/vscode",
   "version": "0.0.1",
   "private": true,
