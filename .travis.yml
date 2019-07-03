@@ -9,7 +9,8 @@ jobs:
     - pip3 install twine
     script:
     - python3 setup.py sdist bdist_wheel
-    - twine upload --skip-existing dist/*
+    - exit 1
+    # - twine upload --skip-existing dist/*
 
   - stage: Deploy VSCode Client
     if: *release_tag
