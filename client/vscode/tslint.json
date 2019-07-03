@@ -44,6 +44,7 @@
         ],
         "curly": true,
         "no-duplicate-variable": true,
+        "no-var-requires": false,
         "triple-equals": true
     }
 }

@@ -18,10 +18,14 @@
  * ----------------------------------------------------------------------- */
 "use strict";
 
+import { execFile } from "child_process";
 import * as net from "net";
 import * as path from "path";
+import { promisify } from "util";
 import { ExtensionContext, workspace } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient";
+
+const version: string = require("../package.json").version;
 
 const language = "wdl";
 
@@ -73,7 +77,7 @@ function startLangServer(
   return new LanguageClient(language, serverOptions, getClientOptions());
 }
 
-export function activate(context: ExtensionContext) {
+export async function activate(context: ExtensionContext) {
   if (isStartedInDebugMode()) {
     // Development - Run the server manually
     client = startLangServerTCP(2087);
@@ -86,16 +90,18 @@ export function activate(context: ExtensionContext) {
       throw new Error(`${language}.pythonPath is not set`);
     }
 
-    client = startLangServer(pythonPath, ["server.py"], cwd);
+    await promisify(execFile)(pythonPath, [
+      "-m", "pip", "install", "--user", "wdl-lsp==" + version,
+    ]);
+    client = startLangServer(pythonPath, ["-m", "wdl_lsp"], cwd);
   }
 
   client.registerProposedFeatures();
   context.subscriptions.push(client.start());
 }
 
-export function deactivate(): Thenable<void> {
-  if (!client) {
-    return undefined;
+export function deactivate() {
+  if (client) {
+    return client.stop();
   }
-  return client.stop();
 }
