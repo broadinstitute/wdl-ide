@@ -1,15 +1,15 @@
 package com.broadinstitute.wdl.devtools;
 
 import com.intellij.ide.plugins.PluginManager;
-import com.intellij.ide.plugins.PluginManagerMain;
-import com.intellij.openapi.application.PluginPathManager;
 import com.intellij.openapi.application.PreloadingActivity;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.progress.ProgressIndicator;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.plugins.textmate.TextMateService;
 import org.jetbrains.plugins.textmate.configuration.BundleConfigBean;
 import org.jetbrains.plugins.textmate.configuration.TextMateSettings;
+
 import org.wso2.lsp4intellij.IntellijLanguageClient;
 import org.wso2.lsp4intellij.client.languageserver.serverdefinition.ExeLanguageServerDefinition;
 
