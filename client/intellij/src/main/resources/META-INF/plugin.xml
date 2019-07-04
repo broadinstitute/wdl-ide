@@ -1,18 +1,30 @@
 <idea-plugin url="https://github.com/broadinstitute/wdl-ide">
-    <id>org.broadinstitute.wdl-devtools</id>
+    <id>org.broadinstitute.wdl.devtools</id>
     <name>WDL DevTools</name>
     <vendor url="https://www.broadinstitute.org">Broad Institute</vendor>
 
-    <description>Advanced development tools for Workflow Description Language></description>
+    <description>Advanced development tools for Workflow Description Language</description>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-         on how to target different products -->
-    <!-- uncomment to enable plugin in all products
-    <depends>com.intellij.modules.lang</depends>
-    -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.plugins.textmate</depends>
+
+    <application-components>
+        <component>
+            <implementation-class>org.wso2.lsp4intellij.IntellijLanguageClient</implementation-class>
+        </component>
+    </application-components>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Add your extensions here -->
+        <preloadingActivity
+                implementation="com.broadinstitute.wdl.devtools.PluginPreloadingActivity"
+                id="io.ballerina.plugins.idea.preloading.BallerinaPreloadingActivity"
+        />
+        <localInspection
+                displayName="LSP"
+                shortName="LSP"
+                enabledByDefault="true"
+                implementationClass="org.wso2.lsp4intellij.contributors.inspection.DummyLSPInspection"
+        />
     </extensions>
 
     <actions>
