@@ -144,8 +144,10 @@ def _get_wdl_paths(ls: Server, wdl_uri: str, reuse_paths = True) -> List[str]:
     ws = ls.workspace
     if ws.folders:
         ws_uris = [f for f in ws.folders if wdl_uri.startswith(f)]
-    else:
+    elif ws.root_uri:
         ws_uris = [ws.root_uri]
+    else:
+        ws_uris = []
     wdl_paths: Set[str] = set()
     for ws_uri in ws_uris:
         if reuse_paths and (ws_uri in ls.wdl_paths):
