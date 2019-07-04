@@ -4,18 +4,18 @@ jobs:
     if: &release_tag tag =~ /^\d+.\d+.\d+$/
     language: python
     python: 3.6
-    script:
+    before_install:
     - cd server
+    script:
     - python3 setup.py sdist bdist_wheel
-    - pip3 install twine
     - twine upload --skip-existing dist/*
 
   - stage: Deploy VSCode Client
     if: *release_tag
     language: node_js
     node_js: node
-    script:
+    before_install:
     - cd client/vscode
-    - npm i
+    script:
     - npm version ${TRAVIS_TAG}
     - vsce publish -p ${VSCE_TOKEN}
