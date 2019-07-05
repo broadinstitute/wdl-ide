@@ -56,7 +56,7 @@ public final class PluginPreloadingActivity extends PreloadingActivity {
     private void setupLanguageServer(final IdeaPluginDescriptor plugin) {
         final String version = plugin.getVersion();
         if (
-                version.endsWith(("dirty")) ||
+                version.contains(("-")) ||
                 !runProcess(PYTHON_PATH, "-m", "pip", "install", "--user", "wdl-lsp==" + version)
         ) {
             return;
