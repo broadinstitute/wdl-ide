@@ -23,6 +23,7 @@ public final class PluginPreloadingActivity extends PreloadingActivity {
     private static final Logger LOG = Logger.getInstance(PluginPreloadingActivity.class);
 
     private static final String PLUGIN_ID = "org.broadinstitute.wdl.devtools";
+    private static final String RELEASE_REGEX = "^\\d+\\.\\d+\\.\\d+$";
 
     private static final String BUNDLE = "WDL";
 
@@ -56,7 +57,7 @@ public final class PluginPreloadingActivity extends PreloadingActivity {
     private void setupLanguageServer(final IdeaPluginDescriptor plugin) {
         final String version = plugin.getVersion();
         if (
-                version.contains(("-")) ||
+                version.matches(RELEASE_REGEX) &&
                 !runProcess(PYTHON_PATH, "-m", "pip", "install", "--user", "wdl-lsp==" + version)
         ) {
             return;
