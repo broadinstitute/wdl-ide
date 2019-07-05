@@ -1,7 +1,7 @@
 jobs:
   include:
   - stage: Deploy Server
-    if: &release_tag tag =~ /^\d+.\d+.\d+$/
+    if: &release_tag tag =~ /^\d+\.\d+\.\d+$/
     language: python
     python: 3.6
     before_install:
