@@ -10,7 +10,8 @@ jobs:
     - python3 setup.py sdist bdist_wheel
     - twine upload --skip-existing dist/*
 
-  - stage: Deploy VSCode Client
+  - stage: Deploy
+    name: Deploy VSCode Client
     if: *release_tag
     language: node_js
     node_js: node
@@ -20,7 +21,8 @@ jobs:
     - npm version ${TRAVIS_TAG}
     - vsce publish -p ${VSCE_TOKEN}
 
-  - stage: Deploy IntelliJ Client
+  - stage: Deploy
+    name: Deploy IntelliJ Client
     # if: *release_tag
     language: java
     jdk: openjdk8
