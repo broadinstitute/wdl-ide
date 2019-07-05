@@ -11,6 +11,8 @@ from pygls.features import (
     CODE_ACTION,
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_CHANGE,
+    TEXT_DOCUMENT_DID_SAVE,
+    TEXT_DOCUMENT_WILL_SAVE,
     WORKSPACE_DID_CHANGE_WATCHED_FILES,
 )
 from pygls.server import LanguageServer
@@ -22,6 +24,8 @@ from pygls.types import (
     DiagnosticSeverity,
     DidOpenTextDocumentParams,
     DidChangeTextDocumentParams,
+    DidSaveTextDocumentParams,
+    WillSaveTextDocumentParams,
     DidChangeWatchedFiles,
     FileChangeType,
     MessageType,
@@ -192,6 +196,16 @@ def did_open(ls: Server, params: DidOpenTextDocumentParams):
 @server.catch_error()
 def did_change(ls: Server, params: DidChangeTextDocumentParams):
     parse_wdl(ls, params.textDocument.uri)
+
+@server.feature(TEXT_DOCUMENT_DID_SAVE)
+@server.catch_error()
+def did_save(ls: Server, params: DidSaveTextDocumentParams):
+    parse_wdl(ls, params.textDocument.uri)
+
+@server.feature(TEXT_DOCUMENT_WILL_SAVE)
+@server.catch_error()
+def will_save(ls: Server, params: WillSaveTextDocumentParams):
+    pass
 
 @server.thread()
 @server.feature(WORKSPACE_DID_CHANGE_WATCHED_FILES)
