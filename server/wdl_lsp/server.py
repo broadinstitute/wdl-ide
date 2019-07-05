@@ -212,7 +212,8 @@ def will_save(ls: Server, params: WillSaveTextDocumentParams):
 @server.catch_error()
 def did_change_watched_files(ls: Server, params: DidChangeWatchedFiles):
     for change in params.changes:
-        if change.type in [FileChangeType.Created, FileChangeType.Deleted]:
+        if  change.type in [FileChangeType.Created, FileChangeType.Deleted] and \
+            change.uri.endswith('.wdl'):
             _get_wdl_paths(ls, change.uri, reuse_paths=False)
 
 class RunWDLParams:
