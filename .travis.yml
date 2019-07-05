@@ -19,3 +19,12 @@ jobs:
     script:
     - npm version ${TRAVIS_TAG}
     - vsce publish -p ${VSCE_TOKEN}
+
+  - stage: Deploy IntelliJ Client
+    # if: *release_tag
+    language: java
+    jdk: openjdk8
+    before_install:
+    - cd client/intellij
+    script:
+    - ./gradlew publishPlugin
