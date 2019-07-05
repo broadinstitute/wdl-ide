@@ -200,7 +200,7 @@ def did_change(ls: Server, params: DidChangeTextDocumentParams):
 @server.feature(TEXT_DOCUMENT_DID_SAVE)
 @server.catch_error()
 def did_save(ls: Server, params: DidSaveTextDocumentParams):
-    parse_wdl(ls, params.textDocument.uri)
+    pass
 
 @server.feature(TEXT_DOCUMENT_WILL_SAVE)
 @server.catch_error()
