@@ -23,7 +23,7 @@ jobs:
 
   - stage: Deploy
     name: Deploy IntelliJ Client
-    # if: *release_tag
+    if: *release_tag
     language: java
     jdk: openjdk8
     before_install:
