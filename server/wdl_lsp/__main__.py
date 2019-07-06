@@ -21,22 +21,22 @@ from sys import stderr
 from .server import server
 
 def add_arguments(parser):
-    parser.description = "simple json server example"
+    parser.description = "WDL Language Server"
 
     parser.add_argument(
-        "--tcp", action="store_true",
+        "-t", "--tcp", action="store_true",
         help="Use TCP server instead of stdio"
     )
     parser.add_argument(
-        "--host", default="127.0.0.1",
+        "-a", "--address", default="127.0.0.1",
         help="Bind to this address"
     )
     parser.add_argument(
-        "--port", type=int, default=2087,
+        "-p", "--port", type=int, default=2087,
         help="Bind to this port"
     )
     parser.add_argument(
-        "--log", default="WARNING",
+        "-l", "--log", default="WARNING",
         choices=("DEBUG", "INFO", "WARNING", "ERROR"),
         help="Minimum level for logging"
     )
@@ -52,7 +52,7 @@ def main():
     )
 
     if args.tcp:
-        server.start_tcp(args.host, args.port)
+        server.start_tcp(args.address, args.port)
     else:
         server.start_io()
 
