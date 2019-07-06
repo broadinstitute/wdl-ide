@@ -16,11 +16,9 @@
 ############################################################################
 import argparse
 import logging
+from sys import stderr
 
 from .server import server
-
-logging.basicConfig(filename="pygls.log", level=logging.DEBUG, filemode="w")
-
 
 def add_arguments(parser):
     parser.description = "simple json server example"
@@ -37,18 +35,26 @@ def add_arguments(parser):
         "--port", type=int, default=2087,
         help="Bind to this port"
     )
-
+    parser.add_argument(
+        "--log", default="WARNING",
+        choices=("DEBUG", "INFO", "WARNING", "ERROR"),
+        help="Minimum level for logging"
+    )
 
 def main():
     parser = argparse.ArgumentParser()
     add_arguments(parser)
     args = parser.parse_args()
 
+    logging.basicConfig(
+        stream = stderr,
+        level = getattr(logging, args.log),
+    )
+
     if args.tcp:
         server.start_tcp(args.host, args.port)
     else:
         server.start_io()
-
 
 if __name__ == '__main__':
     main()

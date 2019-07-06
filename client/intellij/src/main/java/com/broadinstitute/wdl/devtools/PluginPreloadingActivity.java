@@ -56,14 +56,14 @@ public final class PluginPreloadingActivity extends PreloadingActivity {
 
     private void setupLanguageServer(final IdeaPluginDescriptor plugin) {
         final String version = plugin.getVersion();
-        if (
-                version.matches(RELEASE_REGEX) &&
-                !runProcess(PYTHON_PATH, "-m", "pip", "install", "--user", "wdl-lsp==" + version)
-        ) {
+        final boolean isRelease = version.matches(RELEASE_REGEX);
+        if (isRelease && !runProcess(PYTHON_PATH, "-m", "pip", "install", "--user", "wdl-lsp==" + version)) {
             return;
         }
         IntellijLanguageClient.addServerDefinition(
-                new ExeLanguageServerDefinition(EXTENSION, PYTHON_PATH, new String[]{"-m", SERVER_MODULE})
+                new ExeLanguageServerDefinition(EXTENSION, PYTHON_PATH, new String[]{
+                        "-m", SERVER_MODULE, "--log", isRelease ? "WARNING" : "DEBUG",
+                })
         );
     }
 

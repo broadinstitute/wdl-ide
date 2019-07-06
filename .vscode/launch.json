@@ -25,7 +25,8 @@
             "module": "wdl_lsp",
             "console": "internalConsole",
             "args": [
-                "--tcp"
+                "--tcp",
+                "--log=DEBUG"
             ],
             "justMyCode": false,
             "env": {
