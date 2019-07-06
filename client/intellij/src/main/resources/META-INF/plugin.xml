@@ -16,7 +16,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <preloadingActivity
-                implementation="com.broadinstitute.wdl.devtools.PluginPreloadingActivity"
+                implementation="org.broadinstitute.wdl.devtools.PluginPreloadingActivity"
                 id="io.ballerina.plugins.idea.preloading.BallerinaPreloadingActivity"
         />
         <localInspection

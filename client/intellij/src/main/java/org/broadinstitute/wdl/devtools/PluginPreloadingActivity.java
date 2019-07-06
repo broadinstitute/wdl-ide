@@ -1,4 +1,4 @@
-package com.broadinstitute.wdl.devtools;
+package org.broadinstitute.wdl.devtools;
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
