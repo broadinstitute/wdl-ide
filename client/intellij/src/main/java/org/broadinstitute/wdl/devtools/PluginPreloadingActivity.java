@@ -24,7 +24,6 @@ public final class PluginPreloadingActivity extends PreloadingActivity {
     private static final Logger LOG = Logger.getInstance(PluginPreloadingActivity.class);
 
     private static final String PLUGIN_ID = "org.broadinstitute.wdl.devtools";
-    private static final String RELEASE_REGEX = "^\\d+\\.\\d+\\.\\d+$";
 
     private static final String BUNDLE = "WDL";
 
@@ -57,16 +56,17 @@ public final class PluginPreloadingActivity extends PreloadingActivity {
     }
 
     private void setupLanguageServer(final IdeaPluginDescriptor plugin) {
-        final PropertiesComponent settings = PropertiesComponent.getInstance();
-        final String pythonPath = settings.getValue(PYTHON_PATH_PROPERTY, PYTHON_PATH_DEFAULT);
-        final String version = plugin.getVersion();
-        final boolean isRelease = version.matches(RELEASE_REGEX);
-        if (isRelease && !runProcess(pythonPath, "-m", "pip", "install", "--user", "wdl-lsp==" + version)) {
+        final boolean isDebug = "true".equals(System.getProperty("idea.is.internal"));
+        final String pythonPath = PropertiesComponent.getInstance()
+                .getValue(PYTHON_PATH_PROPERTY, PYTHON_PATH_DEFAULT);
+        if (!isDebug &&
+            !runProcess(pythonPath, "-m", "pip", "install", "--user", "wdl-lsp==" + plugin.getVersion())
+        ) {
             return;
         }
         IntellijLanguageClient.addServerDefinition(
                 new ExeLanguageServerDefinition(EXTENSION, pythonPath, new String[]{
-                        "-m", SERVER_MODULE, "--log", isRelease ? "WARNING" : "DEBUG",
+                        "-m", SERVER_MODULE, "--log", isDebug ? "DEBUG" : "WARNING",
                 })
         );
     }
