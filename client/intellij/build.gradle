@@ -26,6 +26,10 @@ intellij {
     plugins 'org.jetbrains.plugins.textmate:191.5109.14'
 }
 
+patchPluginXml {
+    sinceBuild '172'
+}
+
 publishPlugin {
     token findProperty('token')
 }
