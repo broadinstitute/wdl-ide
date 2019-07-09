@@ -81,25 +81,25 @@ def _get_client_config(ls: Server):
     return config[0]
 
 # https://gist.github.com/walkermatt/2871026
-def debounce(delay_sec: float):
+def debounce(delay_sec: float, id_arg: Union[int, str]):
     """ Decorator that will postpone a functions
         execution until after wait seconds
         have elapsed since the last time it was invoked. """
     def decorator(func: Callable):
         @wraps(func)
         def debounced(*args, **kwargs):
-            def call():
-                func(*args, **kwargs)
-            try:
-                debounced.t.cancel()
-            except(AttributeError):
-                pass
-            debounced.t = Timer(delay_sec, call)
-            debounced.t.start()
+            if not hasattr(debounced, 'timers'):
+                debounced.timers: Dict[str, Timer] = dict()
+            id = args[id_arg] if isinstance(id_arg, int) else kwargs[id_arg]
+            if id in debounced.timers:
+                debounced.timers[id].cancel()
+            timer = Timer(delay_sec, lambda: func(*args, **kwargs))
+            debounced.timers[id] = timer
+            timer.start()
         return debounced
     return decorator
 
-@debounce(PARSE_DELAY_SEC)
+@debounce(PARSE_DELAY_SEC, 1)
 def parse_wdl(ls: Server, uri: str):
     ls.show_message_log('Validating ' + uri, MessageType.Info)
     diagnostics, wdl = _parse_wdl(ls, uri)
@@ -187,21 +187,25 @@ def _diagnostic_err(e: WDLError):
     msg = str(e) + cause
     return _diagnostic_pos(msg, e.pos)
 
+@server.thread()
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
 @server.catch_error()
 def did_open(ls: Server, params: DidOpenTextDocumentParams):
     parse_wdl(ls, params.textDocument.uri)
 
+@server.thread()
 @server.feature(TEXT_DOCUMENT_DID_CHANGE)
 @server.catch_error()
 def did_change(ls: Server, params: DidChangeTextDocumentParams):
     parse_wdl(ls, params.textDocument.uri)
 
+@server.thread()
 @server.feature(TEXT_DOCUMENT_DID_SAVE)
 @server.catch_error()
 def did_save(ls: Server, params: DidSaveTextDocumentParams):
     pass
 
+@server.thread()
 @server.feature(TEXT_DOCUMENT_WILL_SAVE)
 @server.catch_error()
 def will_save(ls: Server, params: WillSaveTextDocumentParams):
