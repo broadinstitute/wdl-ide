@@ -35,7 +35,7 @@ publishPlugin {
 }
 
 dependencies {
-    implementation 'com.github.ballerina-platform:lsp4intellij:0.91.0'
+    implementation 'com.github.gayanper:lsp4intellij:pr~enhance-inspections-SNAPSHOT'
 }
 
 prepareSandbox.doLast {

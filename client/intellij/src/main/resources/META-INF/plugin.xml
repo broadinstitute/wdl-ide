@@ -19,11 +19,9 @@
                 implementation="org.broadinstitute.wdl.devtools.PluginPreloadingActivity"
                 id="org.broadinstitute.wdl.devtools.PluginPreloadingActivity"
         />
-        <localInspection
-                displayName="LSP"
-                shortName="LSP"
-                enabledByDefault="true"
-                implementationClass="org.wso2.lsp4intellij.contributors.inspection.DummyLSPInspection"
+        <externalAnnotator
+                implementationClass="org.wso2.lsp4intellij.contributors.annotator.LSPAnnotator"
+                language="textmate"
         />
     </extensions>
 
