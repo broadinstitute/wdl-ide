@@ -33,7 +33,7 @@ from pygls.types import (
     Range,
 )
 
-from os import linesep
+from os import environ, name as platform, pathsep
 from pathlib import Path
 import re, sys
 from requests import HTTPError
@@ -56,7 +56,6 @@ class Server(LanguageServer):
         super().__init__()
         self.wdl_paths: Dict[str, Set[str]] = dict()
         self.aborting_workflows: Set[str] = set()
-        self.linter_available: bool = None
 
     def catch_error(self, log = False):
         def decorator(func: Callable):
@@ -127,22 +126,34 @@ def _parse_wdl(ls: Server, uri: str):
         return [], None
 
 def _lint_wdl(ls: Server, doc: WDL.Document):
+    _check_linter_path()
     warnings = WDL.Lint.collect(WDL.Lint.lint(doc, descend_imports=False))
-    _check_linter(ls)
+    _check_linter_available(ls)
     for pos, _, msg in warnings:
         yield _diagnostic_pos(msg, pos, DiagnosticSeverity.Warning)
 
-def _check_linter(ls: Server):
-    if ls.linter_available is not None:
+def _check_linter_path():
+    if getattr(_check_linter_path, 'skip', False):
         return
 
-    ls.linter_available = WDL.Lint._shellcheck_available == True
-    if not ls.linter_available:
+    LOCAL_BIN = '/usr/local/bin'
+    PATH = environ['PATH'].split(pathsep)
+
+    if platform == 'posix' and LOCAL_BIN not in PATH:
+        environ['PATH'] = pathsep.join([LOCAL_BIN] + PATH)
+    _check_linter_path.skip = True
+
+def _check_linter_available(ls: Server):
+    if getattr(_check_linter_available, 'skip', False):
+         return
+
+    if not WDL.Lint._shellcheck_available:
         ls.show_message('''
-            WDL task command linter is not available.
-            Please install ShellCheck to enable it:
+            WDL task command linter is not available on the system PATH.
+            Please install ShellCheck and/or add it to the PATH:
             https://github.com/koalaman/shellcheck#installing
         ''', MessageType.Warning)
+    _check_linter_available.skip = True
 
 def _get_wdl_paths(ls: Server, wdl_uri: str, reuse_paths = True) -> List[str]:
     ws = ls.workspace
