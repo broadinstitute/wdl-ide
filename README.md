@@ -53,7 +53,7 @@ To deploy the IDE:
 - install [Docker Compose](https://docs.docker.com/compose/install/)
 - for *local-only* development, run this command in the cloned folder:
   ```
-  docker compose up
+  docker-compose up
   ```
 - for local *and* Google Cloud development, do the following instead [*]:
   - [create a project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project) on [Google Cloud Platform](https://cloud.google.com/)
