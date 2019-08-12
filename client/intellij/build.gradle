@@ -35,7 +35,7 @@ publishPlugin {
 }
 
 dependencies {
-    implementation 'com.github.gayanper:lsp4intellij:pr~enhance-inspections-SNAPSHOT'
+    implementation 'com.github.gayanper:lsp4intellij:e12a9280264ff92f3e753774d8ae30c7f749602e'
     implementation 'org.apache.commons:commons-lang3:3.9'
 }
 
