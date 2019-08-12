@@ -32,7 +32,7 @@ setup(
     },
     install_requires=[
         'cromwell-tools == 2.2.0',
-        'miniwdl == 0.2.2',
+        'miniwdl == 0.3.0',
         'pygls == 0.8.0',
     ],
     entry_points={

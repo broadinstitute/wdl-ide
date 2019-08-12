@@ -1,6 +1,8 @@
 ### This file has been adopted from
 ### https://github.com/openlawlibrary/pygls/blob/master/examples/json-extension/server/server.py
 
+import asyncio
+
 from cromwell_tools import api as cromwell_api
 from cromwell_tools.cromwell_auth import CromwellAuth
 from cromwell_tools.utilities import download
@@ -113,8 +115,9 @@ def parse_wdl(ls: Server, uri: str):
 def _parse_wdl(ls: Server, uri: str):
     try:
         paths = _get_wdl_paths(ls, uri)
-        source = ls.workspace.get_document(uri).source
-        wdl = WDL.load(uri, source_text=source, path=paths)
+        wdl = asyncio.run(
+            WDL.load_async(uri, path=paths, read_source=_read_source(ls))
+        )
         return list(_lint_wdl(ls, wdl)), wdl
 
     except WDL.Error.MultipleValidationErrors as errs:
@@ -126,6 +129,12 @@ def _parse_wdl(ls: Server, uri: str):
     except Exception as e:
         ls.show_message_log(str(e), MessageType.Error)
         return [], None
+
+def _read_source(ls: Server):
+    async def read_source(uri: str, path, importer):
+        source = ls.workspace.get_document(uri).source
+        return WDL.ReadSourceResult(source_text=source, abspath=uri)
+    return read_source
 
 def _lint_wdl(ls: Server, doc: WDL.Document):
     _check_linter_path()
