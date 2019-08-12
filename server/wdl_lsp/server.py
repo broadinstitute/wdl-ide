@@ -13,6 +13,7 @@ from pygls.features import (
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_SAVE,
     TEXT_DOCUMENT_WILL_SAVE,
+    WORKSPACE_DID_CHANGE_CONFIGURATION,
     WORKSPACE_DID_CHANGE_WATCHED_FILES,
 )
 from pygls.server import LanguageServer
@@ -22,6 +23,7 @@ from pygls.types import (
     ConfigurationParams,
     Diagnostic,
     DiagnosticSeverity,
+    DidChangeConfigurationParams,
     DidOpenTextDocumentParams,
     DidChangeTextDocumentParams,
     DidSaveTextDocumentParams,
@@ -220,6 +222,10 @@ def did_save(ls: Server, params: DidSaveTextDocumentParams):
 @server.feature(TEXT_DOCUMENT_WILL_SAVE)
 @server.catch_error()
 def will_save(ls: Server, params: WillSaveTextDocumentParams):
+    pass
+
+@server.feature(WORKSPACE_DID_CHANGE_CONFIGURATION)
+def did_change_configuration(ls: Server, params: DidChangeConfigurationParams):
     pass
 
 @server.thread()
