@@ -133,6 +133,8 @@ def _parse_wdl(ls: Server, uri: str):
 def _read_source(ls: Server):
     async def read_source(uri: str, path, importer):
         uri = await WDL.Tree.resolve_file_import(uri, path, importer)
+        if uri.startswith('/'):
+            uri = 'file://' + uri
         source = ls.workspace.get_document(uri).source
         return WDL.ReadSourceResult(source_text=source, abspath=uri)
     return read_source
