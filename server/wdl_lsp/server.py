@@ -208,7 +208,7 @@ def _diagnostic_pos(msg: str, pos: WDL.SourcePosition, severity = DiagnosticSeve
     return _diagnostic(msg, pos.line, pos.column, pos.end_line, pos.end_column, severity)
 
 def _diagnostic_err(e: WDLError):
-    cause = ': {}'.format(e.__cause__.strerror) if e.__cause__ else ''
+    cause = ': {}'.format(e.__cause__) if e.__cause__ else ''
     msg = str(e) + cause
     return _diagnostic_pos(msg, e.pos)
 
