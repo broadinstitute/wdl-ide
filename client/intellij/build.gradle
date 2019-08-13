@@ -24,6 +24,7 @@ dependencies {
 intellij {
     version '2019.1.3'
     plugins 'org.jetbrains.plugins.textmate:191.5109.14'
+    updateSinceUntilBuild false
 }
 
 patchPluginXml {
