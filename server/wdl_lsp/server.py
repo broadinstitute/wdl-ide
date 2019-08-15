@@ -170,7 +170,13 @@ def _find_symbol(ls: Server, uri: str, p: Position):
     symbols = ls.wdl_symbols[uri]
     i = bisect(symbols, pos)
     if i:
-        return symbols[i-1]
+        sym = symbols[i-1]
+        if not (
+                line < sym.line or sym.end_line < line or \
+                (line == sym.line and col < sym.column) or \
+                (line == sym.end_line and col > sym.end_column)
+            ):
+            return sym
 
 def _get_types(nodes: Iterable[SourceNode], types: Dict[str, SourcePosition] = dict()):
     for node in nodes:
