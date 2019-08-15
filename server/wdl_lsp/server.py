@@ -222,12 +222,12 @@ def _find_links(ls: Server, uri: str, pos: Position, links: Dict[str, Dict[Sourc
 def _find_def(ls: Server, uri: str, pos: Position):
     link = _find_links(ls, uri, pos, ls.wdl_defs)
     if link is not None:
-        return Location(link.uri, _get_range(link))
+        return Location(link.abspath, _get_range(link))
 
 def _find_refs(ls: Server, uri: str, pos: Position):
     links = _find_links(ls, uri, pos, ls.wdl_refs)
     if links is not None:
-        return [Location(link.uri, _get_range(link)) for link in links]
+        return [Location(link.abspath, _get_range(link)) for link in links]
 
 def _lint_wdl(ls: Server, doc: WDL.Document):
     _check_linter_path()
