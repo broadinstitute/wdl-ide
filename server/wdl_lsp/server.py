@@ -13,6 +13,7 @@ from functools import wraps
 from pygls.features import (
     CODE_ACTION,
     DEFINITION,
+    REFERENCES,
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_SAVE,
@@ -65,7 +66,8 @@ class Server(LanguageServer):
         super().__init__()
         self.wdl_paths: Dict[str, Set[str]] = dict()
         self.wdl_types: Dict[str, Dict[str, SourcePosition]] = dict()
-        self.wdl_definitions: Dict[str, Dict[SourcePosition, SourcePosition]] = dict()
+        self.wdl_defs: Dict[str, Dict[SourcePosition, SourcePosition]] = dict()
+        self.wdl_refs: Dict[str, Dict[SourcePosition, List[SourcePosition]]] = dict()
         self.wdl_symbols: Dict[str, List[SourcePosition]] = dict()
         self.aborting_workflows: Set[str] = set()
 
@@ -129,7 +131,7 @@ def _parse_wdl(ls: Server, uri: str):
 
         types = _get_types(doc.children)
         ls.wdl_types[uri] = types
-        ls.wdl_definitions[uri] = _get_definitions(doc.children, types)
+        ls.wdl_defs[uri], ls.wdl_refs[uri] = _get_links(doc.children, types)
         ls.wdl_symbols[uri] = sorted(_get_symbols(doc.children))
 
         return list(_lint_wdl(ls, doc)), doc
@@ -177,7 +179,12 @@ def _get_types(nodes: Iterable[SourceNode], types: Dict[str, SourcePosition] = d
         _get_types(node.children, types)
     return types
 
-def _get_definitions(nodes: Iterable[SourceNode], types: Dict[str, SourcePosition], defs: Dict[SourcePosition, SourcePosition] = dict()):
+def _get_links(
+    nodes: Iterable[SourceNode],
+    types: Dict[str, SourcePosition],
+    defs: Dict[SourcePosition, SourcePosition] = dict(),
+    refs: Dict[SourcePosition, List[SourcePosition]] = dict(),
+):
     for node in nodes:
         source: SourcePosition = None
         if isinstance(node, WDL.Call):
@@ -192,18 +199,29 @@ def _get_definitions(nodes: Iterable[SourceNode], types: Dict[str, SourcePositio
                 source = ref.pos
         if source is not None:
             defs[node.pos] = source
-        _get_definitions(node.children, types, defs)
-    return defs
+            refs.setdefault(source, []).append(node.pos)
+        _get_links(node.children, types, defs, refs)
+    return defs, refs
 
-def _find_definition(ls: Server, uri: str, pos: Position):
+SourceLinks = Union[SourcePosition, List[SourcePosition]]
+
+def _find_links(ls: Server, uri: str, pos: Position, links: Dict[str, Dict[SourcePosition, SourceLinks]]):
     symbol = _find_symbol(ls, uri, pos)
-    defs = ls.wdl_definitions
-    if (symbol is None) or (uri not in defs):
+    if (symbol is None) or (uri not in links):
         return
-    defs = defs[uri]
-    if symbol in defs:
-        d = defs[symbol]
-        return Location(d.uri, _get_range(d))
+    symbols = links[uri]
+    if symbol in symbols:
+        return symbols[symbol]
+
+def _find_def(ls: Server, uri: str, pos: Position):
+    link = _find_links(ls, uri, pos, ls.wdl_defs)
+    if link is not None:
+        return Location(link.uri, _get_range(link))
+
+def _find_refs(ls: Server, uri: str, pos: Position):
+    links = _find_links(ls, uri, pos, ls.wdl_refs)
+    if links is not None:
+        return [Location(link.uri, _get_range(link)) for link in links]
 
 def _lint_wdl(ls: Server, doc: WDL.Document):
     _check_linter_path()
@@ -315,11 +333,17 @@ def did_change_watched_files(ls: Server, params: DidChangeWatchedFiles):
             change.uri.endswith('.wdl'):
             _get_wdl_paths(ls, change.uri, reuse_paths=False)
 
-# @server.thread()
+@server.thread()
 @server.feature(DEFINITION)
 @server.catch_error()
 def goto_definition(ls: Server, params: TextDocumentPositionParams):
-    return _find_definition(ls, params.textDocument.uri, params.position)
+    return _find_def(ls, params.textDocument.uri, params.position)
+
+@server.thread()
+@server.feature(REFERENCES)
+@server.catch_error()
+def find_references(ls: Server, params: TextDocumentPositionParams):
+    return _find_refs(ls, params.textDocument.uri, params.position)
 
 class RunWDLParams:
     def __init__(self, wdl_uri: str):
