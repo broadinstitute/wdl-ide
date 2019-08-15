@@ -2,6 +2,7 @@
 ### https://github.com/openlawlibrary/pygls/blob/master/examples/json-extension/server/server.py
 
 import asyncio
+from bisect import bisect
 
 from cromwell_tools import api as cromwell_api
 from cromwell_tools.cromwell_auth import CromwellAuth
@@ -11,6 +12,7 @@ from functools import wraps
 
 from pygls.features import (
     CODE_ACTION,
+    DEFINITION,
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_SAVE,
@@ -30,9 +32,11 @@ from pygls.types import (
     DidChangeTextDocumentParams,
     DidSaveTextDocumentParams,
     WillSaveTextDocumentParams,
+    TextDocumentPositionParams,
     DidChangeWatchedFiles,
     FileChangeType,
     MessageType,
+    Location,
     Position,
     Range,
 )
@@ -43,10 +47,11 @@ import re, sys
 from requests import HTTPError
 from threading import Timer
 from time import sleep
-from typing import Callable, Dict, List, Set, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import WDL
+from WDL import SourceNode, SourcePosition
 
 PARSE_DELAY_SEC = 0.5 # delay parsing of WDL until no more keystrokes are sent
 
@@ -59,6 +64,9 @@ class Server(LanguageServer):
     def __init__(self):
         super().__init__()
         self.wdl_paths: Dict[str, Set[str]] = dict()
+        self.wdl_types: Dict[str, Dict[str, SourcePosition]] = dict()
+        self.wdl_definitions: Dict[str, Dict[SourcePosition, SourcePosition]] = dict()
+        self.wdl_symbols: Dict[str, List[SourcePosition]] = dict()
         self.aborting_workflows: Set[str] = set()
 
     def catch_error(self, log = False):
@@ -115,10 +123,16 @@ def parse_wdl(ls: Server, uri: str):
 def _parse_wdl(ls: Server, uri: str):
     try:
         paths = _get_wdl_paths(ls, uri)
-        wdl = asyncio.run(
+        doc = asyncio.run(
             WDL.load_async(uri, path=paths, read_source=_read_source(ls))
         )
-        return list(_lint_wdl(ls, wdl)), wdl
+
+        types = _get_types(doc.children)
+        ls.wdl_types[uri] = types
+        ls.wdl_definitions[uri] = _get_definitions(doc.children, types)
+        ls.wdl_symbols[uri] = sorted(_get_symbols(doc.children))
+
+        return list(_lint_wdl(ls, doc)), doc
 
     except WDL.Error.MultipleValidationErrors as errs:
         return [_diagnostic_err(e) for e in errs.exceptions], None
@@ -139,12 +153,64 @@ def _read_source(ls: Server):
         return WDL.ReadSourceResult(source_text=source, abspath=uri)
     return read_source
 
+def _get_symbols(nodes: Iterable[SourceNode], symbols: List[SourcePosition] = []):
+    for node in nodes:
+        symbols.append(node.pos)
+        _get_symbols(node.children, symbols)
+    return symbols
+
+def _find_symbol(ls: Server, uri: str, p: Position):
+    line = p.line + 1
+    col = p.character + 1
+    pos = SourcePosition(uri, uri, line, col, line, col)
+    if uri not in ls.wdl_symbols:
+        return
+    symbols = ls.wdl_symbols[uri]
+    i = bisect(symbols, pos)
+    if i:
+        return symbols[i-1]
+
+def _get_types(nodes: Iterable[SourceNode], types: Dict[str, SourcePosition] = dict()):
+    for node in nodes:
+        if isinstance(node, WDL.StructTypeDef):
+            types[node.type_id] = node.pos
+        _get_types(node.children, types)
+    return types
+
+def _get_definitions(nodes: Iterable[SourceNode], types: Dict[str, SourcePosition], defs: Dict[SourcePosition, SourcePosition] = dict()):
+    for node in nodes:
+        source: SourcePosition = None
+        if isinstance(node, WDL.Call):
+            source = node.callee.pos
+        elif isinstance(node, WDL.Decl) and isinstance(node.type, WDL.Type.StructInstance):
+            source = types[node.type.type_id]
+        elif isinstance(node, WDL.Expr.Ident):
+            ref = node.referee
+            if isinstance(ref, WDL.Tree.Gather):
+                source = ref.final_referee.pos
+            else:
+                source = ref.pos
+        if source is not None:
+            defs[node.pos] = source
+        _get_definitions(node.children, types, defs)
+    return defs
+
+def _find_definition(ls: Server, uri: str, pos: Position):
+    symbol = _find_symbol(ls, uri, pos)
+    defs = ls.wdl_definitions
+    if (symbol is None) or (uri not in defs):
+        return
+    defs = defs[uri]
+    if symbol in defs:
+        d = defs[symbol]
+        return Location(d.uri, _get_range(d))
+
 def _lint_wdl(ls: Server, doc: WDL.Document):
     _check_linter_path()
     warnings = WDL.Lint.collect(WDL.Lint.lint(doc, descend_imports=False))
     _check_linter_available(ls)
     for pos, _, msg in warnings:
-        yield _diagnostic_pos(msg, pos, DiagnosticSeverity.Warning)
+        yield _diagnostic(msg, pos, DiagnosticSeverity.Warning)
 
 def _check_linter_path():
     if getattr(_check_linter_path, 'skip', False):
@@ -192,25 +258,25 @@ def _get_wdl_paths(ls: Server, wdl_uri: str, reuse_paths = True) -> List[str]:
 
 WDLError = (WDL.Error.ImportError, WDL.Error.SyntaxError, WDL.Error.ValidationError)
 
-def _diagnostic(msg: str, line = 1, col = 1, end_line = None, end_col = sys.maxsize, severity = DiagnosticSeverity.Error):
-    if end_line is None:
-        end_line = line
-    return Diagnostic(
-        Range(
-            Position(line - 1, col - 1),
-            Position(end_line - 1, end_col - 1),
-        ),
-        msg,
-        severity=severity,
-    )
+def _diagnostic(msg: str, pos: SourcePosition, severity = DiagnosticSeverity.Error):
+    return Diagnostic(_get_range(pos), msg, severity=severity)
 
-def _diagnostic_pos(msg: str, pos: WDL.SourcePosition, severity = DiagnosticSeverity.Error):
-    return _diagnostic(msg, pos.line, pos.column, pos.end_line, pos.end_column, severity)
+def _get_range(p: SourcePosition):
+    if p is None:
+        return Range(
+            Position(),
+            Position(0, sys.maxsize),
+        )
+    else:
+        return Range(
+            Position(p.line - 1, p.column - 1),
+            Position(p.end_line - 1, p.end_column - 1),
+        )
 
 def _diagnostic_err(e: WDLError):
     cause = ': {}'.format(e.__cause__) if e.__cause__ else ''
     msg = str(e) + cause
-    return _diagnostic_pos(msg, e.pos)
+    return _diagnostic(msg, e.pos)
 
 @server.thread()
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
@@ -248,6 +314,12 @@ def did_change_watched_files(ls: Server, params: DidChangeWatchedFiles):
         if  change.type in [FileChangeType.Created, FileChangeType.Deleted] and \
             change.uri.endswith('.wdl'):
             _get_wdl_paths(ls, change.uri, reuse_paths=False)
+
+# @server.thread()
+@server.feature(DEFINITION)
+@server.catch_error()
+def goto_definition(ls: Server, params: TextDocumentPositionParams):
+    return _find_definition(ls, params.textDocument.uri, params.position)
 
 class RunWDLParams:
     def __init__(self, wdl_uri: str):
@@ -314,7 +386,7 @@ def run_wdl(ls: Server, params: Tuple[RunWDLParams]):
             message = '{}: {}'.format(title, status)
             ls.show_message(message, message_type)
 
-            diagnostics = _parse_failures(wdl, wdl_uri, id, auth)
+            diagnostics = _parse_failures(wdl, id, auth)
             return ls.publish_diagnostics(wdl_uri, diagnostics)
 
         sleep(config.cromwell.pollSec)
@@ -340,7 +412,7 @@ def _progress(ls: Server, action: str, params):
 def abort_workflow(ls: Server, params):
     ls.aborting_workflows.add(params.id)
 
-def _parse_failures(wdl: WDL.Document, wdl_uri: str, id: str, auth: CromwellAuth):
+def _parse_failures(wdl: WDL.Document, id: str, auth: CromwellAuth):
     workflow = cromwell_api.metadata(
         id, auth,
         includeKey=['status', 'executionStatus', 'failures', 'stderr'],
@@ -366,7 +438,7 @@ def _parse_failures(wdl: WDL.Document, wdl_uri: str, id: str, auth: CromwellAuth
                         failures.append(stderr)
 
                     msg = '\n\n'.join(failures)
-                    diagnostics.append(_diagnostic_pos(msg, pos))
+                    diagnostics.append(_diagnostic(msg, pos))
         return diagnostics
     else:
         failures = _collect_failures(workflow['failures'], [])
@@ -388,7 +460,7 @@ def _collect_failures(causedBy: List[CausedBy], failures: List[str]):
 WorkflowElements = List[Union[WDL.Decl, WDL.Call, WDL.Scatter, WDL.Conditional]]
 
 def _find_call(elements: WorkflowElements, wf_name: str, call_name: str):
-    found: WDL.SourcePosition = None
+    found: SourcePosition = None
     for el in elements:
         if found:
             break
