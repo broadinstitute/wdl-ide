@@ -23,7 +23,7 @@ More specifically, our plugin will enable you to:
 - [x] watch for completion/failure of each workflow (or cancel it)
 - [x] highlight task-specific failures
 - [ ] get feedback on runtime resource management
-- [ ] enjoy rich editor support (jump to definition etc.)
+- [x] enjoy rich editor support (jump to definition etc.)
 
 ## Browser IDE
 
