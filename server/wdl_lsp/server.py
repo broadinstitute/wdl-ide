@@ -129,10 +129,10 @@ def _parse_wdl(ls: Server, uri: str):
             WDL.load_async(uri, path=paths, read_source=_read_source(ls))
         )
 
-        types = _get_types(doc.children)
+        types = _get_types(doc.children, dict())
         ls.wdl_types[uri] = types
-        ls.wdl_defs[uri], ls.wdl_refs[uri] = _get_links(doc.children, types)
-        ls.wdl_symbols[uri] = sorted(_get_symbols(doc.children))
+        ls.wdl_defs[uri], ls.wdl_refs[uri] = _get_links(doc.children, types, dict(), dict())
+        ls.wdl_symbols[uri] = sorted(_get_symbols(doc.children, []))
 
         return list(_lint_wdl(ls, doc)), doc
 
@@ -155,7 +155,7 @@ def _read_source(ls: Server):
         return WDL.ReadSourceResult(source_text=source, abspath=uri)
     return read_source
 
-def _get_symbols(nodes: Iterable[SourceNode], symbols: List[SourcePosition] = []):
+def _get_symbols(nodes: Iterable[SourceNode], symbols: List[SourcePosition]):
     for node in nodes:
         symbols.append(node.pos)
         _get_symbols(node.children, symbols)
@@ -178,7 +178,7 @@ def _find_symbol(ls: Server, uri: str, p: Position):
             ):
             return sym
 
-def _get_types(nodes: Iterable[SourceNode], types: Dict[str, SourcePosition] = dict()):
+def _get_types(nodes: Iterable[SourceNode], types: Dict[str, SourcePosition]):
     for node in nodes:
         if isinstance(node, WDL.StructTypeDef):
             types[node.type_id] = node.pos
@@ -188,8 +188,8 @@ def _get_types(nodes: Iterable[SourceNode], types: Dict[str, SourcePosition] = d
 def _get_links(
     nodes: Iterable[SourceNode],
     types: Dict[str, SourcePosition],
-    defs: Dict[SourcePosition, SourcePosition] = dict(),
-    refs: Dict[SourcePosition, List[SourcePosition]] = dict(),
+    defs: Dict[SourcePosition, SourcePosition],
+    refs: Dict[SourcePosition, List[SourcePosition]],
 ):
     for node in nodes:
         source: SourcePosition = None
