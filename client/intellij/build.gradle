@@ -36,7 +36,7 @@ publishPlugin {
 }
 
 dependencies {
-    implementation 'com.github.dinvlad:lsp4intellij:586aa851d9'
+    implementation 'com.github.dinvlad:lsp4intellij:911bdd0caf'
 }
 
 prepareSandbox.doLast {
