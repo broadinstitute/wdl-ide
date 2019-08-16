@@ -161,22 +161,32 @@ def _get_symbols(nodes: Iterable[SourceNode], symbols: List[SourcePosition]):
         _get_symbols(node.children, symbols)
     return symbols
 
+# find SourcePosition as the minimum bounding box for cursor Position
 def _find_symbol(ls: Server, uri: str, p: Position):
-    line = p.line + 1
-    col = p.character + 1
-    pos = SourcePosition(uri, uri, line, col, line, col)
     if uri not in ls.wdl_symbols:
         return
     symbols = ls.wdl_symbols[uri]
-    i = bisect(symbols, pos)
-    if i:
-        sym = symbols[i-1]
-        if not (
-                line < sym.line or sym.end_line < line or \
-                (line == sym.line and col < sym.column) or \
-                (line == sym.end_line and col > sym.end_column)
-            ):
-            return sym
+
+    best_score = (sys.maxsize, sys.maxsize)
+    best_sym: SourcePosition = None
+
+    line = p.line + 1
+    col = p.character + 1
+
+    min_pos = SourcePosition(uri, uri, line, 0, line, 0)
+    i = bisect(symbols, min_pos)
+
+    while i < len(symbols):
+        sym = symbols[i]
+        if sym.line > line or (sym.line == line and sym.column > col):
+            break
+        elif sym.end_line > line or (sym.end_line == line and sym.end_column >= col):
+            score = (sym.end_line - sym.line, sym.end_column - sym.column)
+            if score <= best_score:
+                best_score = score
+                best_sym = sym
+        i += 1
+    return best_sym
 
 def _get_types(nodes: Iterable[SourceNode], types: Dict[str, SourcePosition]):
     for node in nodes:
