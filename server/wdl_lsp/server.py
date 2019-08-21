@@ -48,7 +48,7 @@ import re, sys
 from requests import HTTPError
 from threading import Timer
 from time import sleep
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import WDL
@@ -292,10 +292,10 @@ def _get_wdl_paths(ls: Server, wdl_uri: str, reuse_paths = True) -> List[str]:
 
 WDLError = (WDL.Error.ImportError, WDL.Error.SyntaxError, WDL.Error.ValidationError)
 
-def _diagnostic(msg: str, pos: Optional[SourcePosition], severity = DiagnosticSeverity.Error):
+def _diagnostic(msg: str, pos: SourcePosition = None, severity = DiagnosticSeverity.Error):
     return Diagnostic(_get_range(pos), msg, severity=severity)
 
-def _get_range(p: Optional[SourcePosition]):
+def _get_range(p: SourcePosition = None):
     if p is None:
         return Range(
             Position(),
