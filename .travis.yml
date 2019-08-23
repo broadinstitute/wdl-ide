@@ -2,8 +2,9 @@ jobs:
   include:
   - stage: Deploy Server
     if: &release_tag tag =~ /^\d+\.\d+\.\d+$/
+    dist: bionic
     language: python
-    python: 3.6
+    python: 3.7
     before_install:
     - cd server
     script:

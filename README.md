@@ -23,7 +23,7 @@ More specifically, our plugin will enable you to:
 - [x] watch for completion/failure of each workflow (or cancel it)
 - [x] highlight task-specific failures
 - [ ] get feedback on runtime resource management
-- [ ] enjoy rich editor support (jump to definition etc.)
+- [x] enjoy rich editor support (jump to definition etc.)
 
 ## Browser IDE
 
@@ -53,7 +53,7 @@ To deploy the IDE:
 - install [Docker Compose](https://docs.docker.com/compose/install/)
 - for *local-only* development, run this command in the cloned folder:
   ```
-  docker compose up
+  docker-compose pull && docker-compose up
   ```
 - for local *and* Google Cloud development, do the following instead [*]:
   - [create a project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project) on [Google Cloud Platform](https://cloud.google.com/)
@@ -64,6 +64,7 @@ To deploy the IDE:
   - [grant](https://cloud.google.com/storage/docs/access-control/using-iam-permissions#bucket-add) `Storage Object Admin` _permission_ on the Cromwell executions bucket
   - run this command, replacing `<...>` with your values:
     ```
+    docker-compose pull && \
     GOOGLE_APPLICATION_CREDENTIALS=./<your-service-account-key>.json \
     GOOGLE_AUTH_MODE=service-account \
     GOOGLE_CLOUD_PROJECT=<your-project-name> \
