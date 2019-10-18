@@ -30,9 +30,9 @@ setup(
         'relative_to': __file__,
     },
     install_requires=[
-        'cromwell-tools == 2.2.0',
-        'miniwdl == 0.3.0',
-        'pygls == 0.8.0',
+        'cromwell-tools == 2.3.0',
+        'miniwdl == 0.5.1',
+        'pygls == 0.8.1',
     ],
     entry_points={
         'console_scripts': ['wdl-lsp = wdl_lsp.__main__:main'],
