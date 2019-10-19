@@ -22,7 +22,7 @@ dependencies {
 }
 
 intellij {
-    version '2019.1.3'
+    version '2019.1.4'
     plugins 'org.jetbrains.plugins.textmate:191.5109.14'
     updateSinceUntilBuild false
 }
@@ -36,7 +36,7 @@ publishPlugin {
 }
 
 dependencies {
-    implementation 'com.github.dinvlad:lsp4intellij:911bdd0caf'
+    implementation 'com.github.ballerina-platform:lsp4intellij:0.93.4'
 }
 
 prepareSandbox.doLast {
