@@ -54,7 +54,7 @@ FROM base
 
 ENV USER=theia \
     THEIA_PLUGINS=local-dir:plugins,vscode:extension/broadinstitute.wdl-devtools
-    # vscode:extension/PeterJausovec.vscode-docker
+    # vscode:extension/ms-azuretools.vscode-docker
 
 RUN apk add --no-cache \
       docker \
