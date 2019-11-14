@@ -25,6 +25,13 @@ More specifically, our plugin will enable you to:
 - [ ] get feedback on runtime resource management
 - [x] enjoy rich editor support (jump to definition etc.)
 
+You can find the following published extensions based on this plugin:
+- [WDL DevTools](https://marketplace.visualstudio.com/items?itemName=broadinstitute.wdl-devtools) for **VS Code**
+- [WDL DevTools](https://plugins.jetbrains.com/plugin/12674-wdl-devtools) for **IntelliJ**
+
+Other editors are supported via their respective LSP plugins.
+Examples on how to connect them are in the [client](client) directory.
+
 ## Browser IDE
 
 Additionally, we provide an Integrated Development Environment (IDE),
