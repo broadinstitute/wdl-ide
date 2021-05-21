@@ -52,7 +52,7 @@ from typing import Callable, Dict, Iterable, List, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import WDL
-from WDL import SourceNode, SourcePosition
+from WDL import SourceNode, SourcePosition, Lint
 
 PARSE_DELAY_SEC = 0.5 # delay parsing of WDL until no more keystrokes are sent
 
@@ -241,9 +241,9 @@ def _find_refs(ls: Server, uri: str, pos: Position):
 
 def _lint_wdl(ls: Server, doc: WDL.Document):
     _check_linter_path()
-    warnings = WDL.Lint.collect(WDL.Lint.lint(doc, descend_imports=False))
+    warnings = Lint.collect(Lint.lint(doc, descend_imports=False))
     _check_linter_available(ls)
-    for pos, _, msg in warnings:
+    for pos, _, msg, _ in warnings:
         yield _diagnostic(msg, pos, DiagnosticSeverity.Warning)
 
 def _check_linter_path():
@@ -261,7 +261,7 @@ def _check_linter_available(ls: Server):
     if getattr(_check_linter_available, 'skip', False):
          return
 
-    if not WDL.Lint._shellcheck_available:
+    if not Lint._shellcheck_available:
         ls.show_message('''
             WDL task command linter is not available on the system PATH.
             Please install ShellCheck and/or add it to the PATH:
