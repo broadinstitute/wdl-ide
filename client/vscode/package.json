@@ -60,21 +60,20 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "postinstall": "vscode-install",
     "vsce": "vsce",
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
-    "@types/node": "^8.10.55",
-    "tslint": "^5.20.0",
+    "@types/node": "^8.10.66",
+    "@types/vscode": "^1.56.0",
+    "tslint": "^5.20.1",
     "tslint-microsoft-contrib": "^6.2.0",
-    "tsutils": "^3.17.1",
-    "typescript": "^3.6.4",
-    "vsce": "^1.64.0",
-    "vscode": "^1.1.36"
+    "tsutils": "^3.21.0",
+    "typescript": "^3.9.9",
+    "vsce": "^1.64.0"
   },
   "dependencies": {
-    "vscode-languageclient": "^6.0.0-next.1"
+    "vscode-languageclient": "^6.1.4"
   },
   "extensionDependencies": [
     "broadinstitute.wdl"
