@@ -24,7 +24,8 @@
     "keybindings": [
       {
         "command": "editor.action.codeAction",
-        "key": "shift+enter",
+        "key": "shift+alt+enter",
+        "when": "editorFocus && editorLangId == 'wdl'",
         "args": {
           "kind": "wdl.run"
         }
