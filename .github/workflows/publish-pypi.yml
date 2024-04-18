@@ -29,12 +29,12 @@ jobs:
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
-          python-version: "3.10"
+        python-version: "3.10"
 
     - name: Build wheels
       working-directory: server
       run: python -m pip wheel . --no-deps -w dist
 
     - name: Publish package distributions to PyPI
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/master'
       uses: pypa/gh-action-pypi-publish@release/v1
