@@ -1,0 +1,40 @@
+name: Build and Publish to PyPI
+
+on:
+  push:
+    branches: [master]
+    paths:
+    - ".github/workflows/publish-vscode.yml"
+    - "client/vscode/**"
+  pull_request:
+    branches: [master]
+    paths:
+    - ".github/workflows/publish-vscode.yml"
+    - "client/vscode/**"
+
+
+jobs:
+  publish-vscode:
+    name: Publish release to VS Code Marketplace
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./client/vscode
+    environment:
+      name: vscode
+
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: lts
+
+    - name: Build
+      run: npm ci
+
+    - name: Publish
+      if: github.ref == 'refs/heads/master'
+      run: vsce publish -p ${{ secrets.VSCE_TOKEN }}
