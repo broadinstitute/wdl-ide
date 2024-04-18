@@ -32,9 +32,8 @@ jobs:
           python-version: "3.10"
 
     - name: Build wheels
-      uses: pypa/cibuildwheel@v2.17
-      with:
-        package-dir: server
+      working-directory: server
+      run: python -m pip wheel . --no-deps -w dist
 
     - name: Publish package distributions to PyPI
       if: github.ref == 'refs/heads/main'
