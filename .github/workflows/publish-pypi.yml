@@ -33,6 +33,8 @@ jobs:
 
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.17
+      with:
+        package-dir: server
 
     - name: Publish package distributions to PyPI
       if: github.ref == 'refs/heads/main'
