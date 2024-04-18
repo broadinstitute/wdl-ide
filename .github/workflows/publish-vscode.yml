@@ -1,4 +1,4 @@
-name: Build and Publish to PyPI
+name: Build and Publish to VS Code Marketplace
 
 on:
   push:
