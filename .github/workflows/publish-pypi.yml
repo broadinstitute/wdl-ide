@@ -2,11 +2,11 @@ name: Build and Publish to PyPI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
     - "server/**"
   pull_request:
-    branches: [main]
+    branches: [master]
     paths:
     - "server/**"
 
