@@ -17,6 +17,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-tags: true
 
     - name: Set up JDK
       uses: actions/setup-java@v4
@@ -25,6 +27,6 @@ jobs:
         java-version: '21'
 
     - name: Publish Plugin
-      if: github.ref_protected
+      if: github.event_name == 'release'
       working-directory: client/intellij
       run: ./gradlew publishPlugin -Ptoken=${{ secrets.JETBRAINS_TOKEN }}
