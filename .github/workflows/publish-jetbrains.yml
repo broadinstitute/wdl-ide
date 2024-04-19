@@ -1,11 +1,7 @@
 name: Build and Publish to JetBrains Marketplace
 
 on:
-  push:
-    branches: [master]
-    paths:
-    - ".github/workflows/publish-jetbrains.yml"
-    - "client/intellij/**"
+  release:
   pull_request:
     branches: [master]
     paths:
@@ -29,6 +25,6 @@ jobs:
         java-version: '21'
 
     - name: Publish Plugin
-      if: github.ref == 'refs/heads/master'
+      if: github.ref_protected
       working-directory: client/intellij
       run: ./gradlew publishPlugin -Ptoken=${{ secrets.JETBRAINS_TOKEN }}

@@ -33,7 +33,7 @@ jobs:
       run: python -m pip wheel . --no-deps -w dist
 
     - name: Publish package distributions to PyPI
-      if: github.ref == 'refs/heads/master'
+      if: github.ref_protected
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         packages-dir: server/dist
