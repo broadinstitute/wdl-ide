@@ -22,6 +22,9 @@ jobs:
       url: https://pypi.org/p/wdl-lsp
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    defaults:
+      run:
+        working-directory: server
 
     steps:
     - uses: actions/checkout@v4
@@ -32,7 +35,6 @@ jobs:
         python-version: "3.10"
 
     - name: Build wheels
-      working-directory: server
       run: python -m pip wheel . --no-deps -w dist
 
     - name: Publish package distributions to PyPI
