@@ -2,6 +2,7 @@ name: Build and Publish to VS Code Marketplace
 
 on:
   release:
+    types: [released]
   pull_request:
     branches: [master]
     paths:
