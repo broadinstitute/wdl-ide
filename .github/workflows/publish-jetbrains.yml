@@ -19,9 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: jetbrains
-    defaults:
-      run:
-        working-directory: client/intellij
 
     steps:
     - uses: actions/checkout@v4
@@ -34,4 +31,5 @@ jobs:
 
     - name: Publish Plugin
       if: github.ref == 'refs/heads/master'
+      working-directory: client/intellij
       run: ./gradlew publishPlugin -Ptoken=${{ secrets.JETBRAINS_TOKEN }}
