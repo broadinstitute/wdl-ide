@@ -12,7 +12,6 @@ on:
     - ".github/workflows/publish-jetbrains.yml"
     - "client/intellij/**"
 
-
 jobs:
   publish-jetbrains:
     name: Publish release to JetBrains Marketplace

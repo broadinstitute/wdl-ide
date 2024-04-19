@@ -12,7 +12,6 @@ on:
     - ".github/workflows/publish-vscode.yml"
     - "client/vscode/**"
 
-
 jobs:
   publish-vscode:
     name: Publish release to VS Code Marketplace

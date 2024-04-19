@@ -8,7 +8,6 @@ on:
     - ".github/workflows/publish-pypi.yml"
     - "server/**"
 
-
 jobs:
   publish-pypi:
     name: Upload release to PyPI
