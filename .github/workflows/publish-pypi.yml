@@ -1,11 +1,7 @@
 name: Build and Publish to PyPI
 
 on:
-  push:
-    branches: [master]
-    paths:
-    - ".github/workflows/publish-pypi.yml"
-    - "server/**"
+  release:
   pull_request:
     branches: [master]
     paths:
