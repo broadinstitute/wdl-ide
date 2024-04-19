@@ -1,17 +1,12 @@
 name: Build and Publish to PyPI
 
 on:
-  push:
-    branches: [master]
-    paths:
-    - ".github/workflows/publish-pypi.yml"
-    - "server/**"
+  release:
   pull_request:
     branches: [master]
     paths:
     - ".github/workflows/publish-pypi.yml"
     - "server/**"
-
 
 jobs:
   publish-pypi:
@@ -25,6 +20,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -36,7 +33,7 @@ jobs:
       run: python -m pip wheel . --no-deps -w dist
 
     - name: Publish package distributions to PyPI
-      if: github.ref == 'refs/heads/master'
+      if: github.ref_protected
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         packages-dir: server/dist

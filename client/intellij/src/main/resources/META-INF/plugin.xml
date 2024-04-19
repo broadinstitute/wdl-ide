@@ -2,6 +2,7 @@
     <id>org.broadinstitute.wdl.devtools</id>
     <name>WDL DevTools</name>
     <vendor url="https://www.broadinstitute.org">Broad Institute</vendor>
+    <version>@version@</version>
 
     <description>Advanced development tools for Workflow Description Language</description>
 
