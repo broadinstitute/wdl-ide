@@ -90,9 +90,14 @@ export async function activate(context: ExtensionContext) {
       throw new Error(`${language}.pythonPath is not set`);
     }
 
-    await promisify(execFile)(pythonPath, [
-      "-m", "pip", "install", "--user", "wdl-lsp==" + version,
-    ]);
+    const { stdout } = await promisify(execFile)(pythonPath, ["-m", "pip", "show", "wdl-lsp"]);
+    const versionStr = stdout.split('\n').find(line => line.startsWith('Version:'));
+    if (!versionStr || versionStr.split(':')[1].trim() !== version) {
+      await promisify(execFile)(pythonPath, [
+        "-m", "pip", "install", "--user", "wdl-lsp==" + version,
+      ]);
+    }
+
     client = startLangServer(pythonPath, ["-m", "wdl_lsp"], cwd);
   }
 
