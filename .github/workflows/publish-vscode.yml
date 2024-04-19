@@ -17,12 +17,11 @@ jobs:
   publish-vscode:
     name: Publish release to VS Code Marketplace
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./client/vscode
     environment:
       name: vscode
-
+    defaults:
+      run:
+        working-directory: client/vscode
 
     steps:
     - uses: actions/checkout@v4
