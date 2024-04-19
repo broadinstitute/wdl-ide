@@ -34,4 +34,4 @@ jobs:
 
     - name: Publish
       if: github.ref == 'refs/heads/master'
-      run: vsce publish -p ${{ secrets.VSCE_TOKEN }}
+      run: npm run vsce publish -p ${{ secrets.VSCE_TOKEN }}
