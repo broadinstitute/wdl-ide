@@ -2,12 +2,14 @@ name: Build and Publish to PyPI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
+    - ".github/workflows/publish-pypi.yml"
     - "server/**"
   pull_request:
-    branches: [main]
+    branches: [master]
     paths:
+    - ".github/workflows/publish-pypi.yml"
     - "server/**"
 
 
@@ -20,18 +22,21 @@ jobs:
       url: https://pypi.org/p/wdl-lsp
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    defaults:
+      run:
+        working-directory: server
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python 3.10
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-          python-version: "3.10"
+        python-version: "3.10"
 
     - name: Build wheels
-      uses: pypa/cibuildwheel@v2.17
+      run: python -m pip wheel . --no-deps -w dist
 
     - name: Publish package distributions to PyPI
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/master'
       uses: pypa/gh-action-pypi-publish@release/v1

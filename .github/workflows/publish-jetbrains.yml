@@ -1,0 +1,37 @@
+name: Build and Publish to JetBrains Marketplace
+
+on:
+  push:
+    branches: [master]
+    paths:
+    - ".github/workflows/publish-jetbrains.yml"
+    - "client/intellij/**"
+  pull_request:
+    branches: [master]
+    paths:
+    - ".github/workflows/publish-jetbrains.yml"
+    - "client/intellij/**"
+
+
+jobs:
+  publish-jetbrains:
+    name: Publish release to JetBrains Marketplace
+    runs-on: ubuntu-latest
+    environment:
+      name: jetbrains
+    defaults:
+      run:
+        working-directory: client/intellij
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '21'
+
+    - name: Publish Plugin
+      if: github.ref == 'refs/heads/master'
+      run: ./gradlew publishPlugin -Ptoken=${{ secrets.JETBRAINS_TOKEN }}
