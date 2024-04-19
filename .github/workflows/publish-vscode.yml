@@ -31,4 +31,4 @@ jobs:
     - name: Publish
       if: github.event_name == 'release'
       run: npm version ${{ github.ref_name }} &&
-           npm run vsce publish -p ${{ secrets.VSCE_TOKEN }}
+           npm run vsce publish -p ${{ secrets.VSCE_TOKEN }} ${{ github.ref_name }}
