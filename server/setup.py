@@ -1,9 +1,17 @@
+import os
+
 from setuptools import find_packages, setup
+
+cwd = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(cwd, '..', 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name='wdl-lsp',
     author='Broad Institute',
     description='Language Server Protocol (LSP) implementation for Workflow Definition Language (WDL)',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     license='BSD 3-clause "New" or "Revised" License',
     url='https://github.com/broadinstitute/wdl-ide',
     classifiers=[
