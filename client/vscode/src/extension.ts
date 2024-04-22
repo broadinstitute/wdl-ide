@@ -23,7 +23,7 @@ import * as net from "net";
 import * as path from "path";
 import { promisify } from "util";
 import { ExtensionContext, workspace } from "vscode";
-import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient";
+import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 
 const version: string = require("../package.json").version;
 
@@ -106,7 +106,7 @@ export async function activate(context: ExtensionContext) {
   }
 
   client.registerProposedFeatures();
-  context.subscriptions.push(client.start());
+  await client.start();
 }
 
 export function deactivate() {

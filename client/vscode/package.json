@@ -65,16 +65,14 @@
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
-    "@types/node": "^8.10.66",
-    "@types/vscode": "^1.56.0",
-    "tslint": "^5.20.1",
-    "tslint-microsoft-contrib": "^6.2.0",
-    "tsutils": "^3.21.0",
-    "typescript": "^3.9.9",
-    "vsce": "^1.64.0"
+    "@types/node": "^20.12.7",
+    "@types/vscode": "^1.88.0",
+    "@vscode/vsce": "^2.26.0",
+    "eslint": "^9.1.1",
+    "typescript": "^5.4.5"
   },
   "dependencies": {
-    "vscode-languageclient": "^6.1.4"
+    "vscode-languageclient": "^9.0.1"
   },
   "extensionDependencies": [
     "broadinstitute.wdl"
