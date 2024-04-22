@@ -21,10 +21,9 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    python_requires='>=3.7.0',
+    python_requires='>=3.8',
     packages=find_packages(
         exclude=[
             'tests',
@@ -38,9 +37,9 @@ setup(
         'relative_to': __file__,
     },
     install_requires=[
-        'cromwell-tools == 2.3.0',
-        'miniwdl >= 1.1.5',
-        'pygls == 0.8.1',
+        'cromwell-tools >= 2.4.1',
+        'miniwdl >= 1.11.1',
+        'pygls >= 1.3.1',
     ],
     entry_points={
         'console_scripts': ['wdl-lsp = wdl_lsp.__main__:main'],
