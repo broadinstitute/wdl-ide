@@ -19,17 +19,17 @@
 "use strict";
 
 import { execFile } from "child_process";
-import * as net from "net";
+import * as fs from "fs";
 import * as path from "path";
-import { promisify } from "util";
-import { ExtensionContext, workspace } from "vscode";
+import { ExtensionContext, window, workspace } from "vscode";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
-
-const version: string = require("../package.json").version;
 
 const language = "wdl";
 
-let client: LanguageClient;
+const log = window.createOutputChannel("WDL Language Server");
+
+const version: string = require("../package.json").version;
+log.appendLine(`WDL Language Server version: ${version}`);
 
 function getClientOptions(): LanguageClientOptions {
   return {
@@ -37,32 +37,12 @@ function getClientOptions(): LanguageClientOptions {
     documentSelector: [
       { scheme: "file", language },
     ],
-    outputChannelName: "WDL Language Server",
+    outputChannel: log,
     synchronize: {
       // Notify the server about changes to .wdl files contained in the workspace
       fileEvents: workspace.createFileSystemWatcher("**/*.wdl"),
     },
   };
-}
-
-function isStartedInDebugMode(): boolean {
-  return process.env.VSCODE_DEBUG_MODE === "true";
-}
-
-function startLangServerTCP(addr: number): LanguageClient {
-  const serverOptions: ServerOptions = () => {
-    return new Promise((resolve, reject) => {
-      const clientSocket = new net.Socket();
-      clientSocket.connect(addr, "127.0.0.1", () => {
-        resolve({
-          reader: clientSocket,
-          writer: clientSocket,
-        });
-      });
-    });
-  };
-
-  return new LanguageClient(language, serverOptions, getClientOptions());
 }
 
 function startLangServer(
@@ -77,37 +57,44 @@ function startLangServer(
   return new LanguageClient(language, serverOptions, getClientOptions());
 }
 
-export async function activate(context: ExtensionContext) {
-  if (isStartedInDebugMode()) {
-    // Development - Run the server manually
-    client = startLangServerTCP(2087);
-  } else {
-    // Production - Client is going to run the server (for use within `.vsix` package)
-    const cwd = path.join(__dirname, "../");
-    const pythonPath = workspace.getConfiguration(language).get<string>("pythonPath");
-
-    if (!pythonPath) {
-      throw new Error(`${language}.pythonPath is not set`);
-    }
-
-    try {
-      const { stdout } = await promisify(execFile)(pythonPath, ["-m", "pip", "show", "wdl-lsp"]).catch(err => {
-        console.log(err);
-        return { stdout: "" };
-      });
-      const versionStr = stdout.split('\n').find(line => line.startsWith('Version:'));
-      if (!versionStr || versionStr.split(':')[1].trim() !== version) {
-        await promisify(execFile)(pythonPath, [
-          "-m", "pip", "install", "--user", "wdl-lsp==" + version,
-        ]);
+async function exec(cmd: string, ...args: string[]) {
+  return new Promise<void>(resolve => {
+    execFile(cmd, args, (err, stdout, stderr) => {
+      log.appendLine(`${cmd} ${args.join(" ")}`);
+      if (err) {
+        log.appendLine(err.message);
       }
-    } catch (e) {
-      console.error(e);
-    }
+      log.appendLine(stdout);
+      log.appendLine(stderr);
+      if (err) {
+        log.show();
+      }
+      resolve();
+    });
+  });
+}
 
-    client = startLangServer(pythonPath, ["-m", "wdl_lsp"], cwd);
+let client: LanguageClient;
+
+export async function activate(context: ExtensionContext) {
+  const cwd = path.join(__dirname, "../");
+
+  const venvPath = path.join(__dirname, '.venv');
+  if (!fs.existsSync(venvPath)) {
+    const pythonPath = workspace.getConfiguration(language).get<string>("pythonPath")!;
+    await exec(pythonPath, "-m", "venv", venvPath);
   }
 
+  const installArgs: string[] = [];
+  if (process.env.VSCODE_DEBUG_MODE === "true") {
+    installArgs.push(path.join(__dirname, '..', '..', '..', 'server'));
+  } else {
+    installArgs.push("--upgrade", "wdl-lsp");
+  }
+  const pythonPath = path.join(venvPath, 'bin', 'python');
+  await exec(pythonPath, "-m", "pip", "install", ...installArgs);
+
+  client = startLangServer(pythonPath, ["-m", "wdl_lsp"], cwd);
   client.registerProposedFeatures();
   await client.start();
 }
