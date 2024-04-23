@@ -91,7 +91,10 @@ export async function activate(context: ExtensionContext) {
     }
 
     try {
-      const { stdout } = await promisify(execFile)(pythonPath, ["-m", "pip", "show", "wdl-lsp"]);
+      const { stdout } = await promisify(execFile)(pythonPath, ["-m", "pip", "show", "wdl-lsp"]).catch(err => {
+        console.log(err);
+        return { stdout: "" };
+      });
       const versionStr = stdout.split('\n').find(line => line.startsWith('Version:'));
       if (!versionStr || versionStr.split(':')[1].trim() !== version) {
         await promisify(execFile)(pythonPath, [
